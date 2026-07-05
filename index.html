@@ -1474,8 +1474,8 @@ document.getElementById('runReview').onclick=async()=>{
   };
   reviewAccuracy={ w: gameAcc(accsW), b: gameAcc(accsB) };
   prog.style.display='none';bar.style.width='0';
-  render(); // show badges on current board position
   renderReview();
+  gotoPly(0); // scan done — start reviewing from move 0
 };
 
 function renderReview(){
