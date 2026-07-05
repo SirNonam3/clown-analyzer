@@ -253,6 +253,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       <button id="navEnd" title="End">⏭</button>
       <button id="navFlip" title="Flip board">⟳</button>
     </div>
+    <button class="btn" id="returnGame" style="display:none;width:100%;margin:-4px 0 10px">↩ Return to game</button>
 
     <!-- PLAY -->
     <div class="tabpane active" id="tab-play">
@@ -607,6 +608,7 @@ let ply=0;           // current position index when navigating loaded game
 let loadedMode=false;// true when viewing an imported game
 let flipped=false;
 let selected=null;   // selected square
+let excursionPly=null; // ply where the user left the loaded game to try their own moves
 let reviewData=null; // per-ply analysis
 let reviewAccuracy=null; // {w, b} game accuracy %
 let reviewEvals=null;    // White-POV cp per position (plies+1)
@@ -666,6 +668,9 @@ function render(){
       cell.appendChild(b);
     }
   }
+  // "Return to game" appears only while trying own moves off a loaded game
+  const rg=document.getElementById('returnGame');
+  if(rg)rg.style.display=(fullHistory&&excursionPly!==null)?'block':'none';
   updateFenOut();
 }
 
@@ -711,6 +716,8 @@ let drag=null; // {from, startX, startY, clone, srcPiece, cell, moved}
 function tryMove(from,to,noAnim){
   const mv=game.moves({square:from,verbose:true}).find(m=>m.to===to);
   if(!mv)return false;
+  // first own move while a game is loaded = leaving the game line; remember where
+  if(fullHistory && excursionPly===null) excursionPly=ply;
   let promo;
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
   const made=game.move({from,to,promotion:promo||'q'});
@@ -908,7 +915,7 @@ function gotoPly(n){
   game.reset();
   if(startFen) game.load(startFen);
   for(let i=0;i<n;i++) game.move(full[i]);
-  ply=n; loadedMode=true; selected=null;
+  ply=n; loadedMode=true; selected=null; excursionPly=null;
   if(n>0) sfxFor(game.history({verbose:true}).slice(-1)[0]);
   render();
   if(Math.abs(n-prevPly)===1){ // single step: slide the piece
@@ -927,10 +934,15 @@ let fullHistory=null, startFen=null;
 document.getElementById('navStart').onclick=()=>{ if(fullHistory)gotoPly(0); };
 document.getElementById('navEnd').onclick=()=>{ if(fullHistory)gotoPly(fullHistory.length); };
 document.getElementById('navPrev').onclick=()=>{
-  if(fullHistory){ if(ply>0)gotoPly(ply-1); }
+  if(fullHistory && excursionPly===null){ if(ply>0)gotoPly(ply-1); }
   else { const und=game.undo(); selected=null; sfx('move'); afterMove(); if(und)animateMoveObj(und,true); }
 };
-document.getElementById('navNext').onclick=()=>{ if(fullHistory&&ply<fullHistory.length)gotoPly(ply+1); };
+document.getElementById('navNext').onclick=()=>{ if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
+document.getElementById('returnGame').onclick=()=>{
+  if(!fullHistory)return;
+  const back=Math.max(0,Math.min(excursionPly??fullHistory.length,fullHistory.length));
+  gotoPly(back); // rebuilds the real game line; also clears excursionPly
+};
 document.getElementById('navFlip').onclick=()=>{
   flipped=!flipped;render();
   if(lastArrows&&document.getElementById('showArrow').checked)drawArrows(lastArrows);
@@ -945,7 +957,7 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.d
 
 /* ---------- Play tab ---------- */
 document.getElementById('newGame').onclick=()=>{
-  game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;
+  game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;
   clearArrow();render();rebuildMoveList();triggerAnalysis();
 };
 document.getElementById('undoMove').onclick=()=>{const und=game.undo();selected=null;afterMove();if(und)animateMoveObj(und,true);};
@@ -961,7 +973,7 @@ function loadGameFromPgn(pgn){
   if(fenH){startFen=fenH[1];}
   gameMeta=startFen?{opening:null,eco:null,bookPlies:0,white:null,black:null,result:null}:extractGameMeta(pgn,fullHistory);
   game.reset(); if(startFen)game.load(startFen);
-  ply=0;loadedMode=true;reviewData=null;reviewEvals=null;reviewAccuracy=null;selected=null;
+  ply=0;loadedMode=true;reviewData=null;reviewEvals=null;reviewAccuracy=null;selected=null;excursionPly=null;
   document.getElementById('reviewList').innerHTML='';
   render();
   document.getElementById('moveList').innerHTML=renderMoveSpans(fullHistory,0);
