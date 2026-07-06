@@ -1,0 +1,1 @@
+auth completed, also I want you to make the eval bar according to the side of black and white for example if the player is viewing from blacks side eval bars lower half should be black and upper half should be white, if you are viewing from whites perspective lower half should be white.

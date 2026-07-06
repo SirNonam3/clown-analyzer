@@ -845,9 +845,22 @@ function showEval(m,turn){
     pct=50+50*(2/(1+Math.exp(-0.4*e))-1);
     label=(e>=0?'+':'')+e.toFixed(1);
   }
+  lastEvalPaint={pct,label};
+  paintEvalBar();
+}
+/* Paint the bar so the white share sits on White's side of the board (flips with the view). */
+let lastEvalPaint={pct:50,label:'0.0'};
+function paintEvalBar(){
+  const fill=document.getElementById('evalfill');
+  const text=document.getElementById('evaltext');
+  const {pct,label}=lastEvalPaint;
   fill.style.height=pct+'%';
+  if(flipped){ fill.style.top='0'; fill.style.bottom='auto'; }   // Black's view: white on top
+  else{ fill.style.top='auto'; fill.style.bottom='0'; }          // White's view: white at bottom
   text.textContent=label;
-  text.className=pct<50?'neg':'';
+  const atBottom = flipped ? pct>=50 : pct<50; // label sits over the darker (losing-side) end
+  text.style.top=atBottom?'auto':'4px';
+  text.style.bottom=atBottom?'4px':'auto';
 }
 function setBest(a,b){document.getElementById('bestText').textContent=a;document.getElementById('pvText').textContent=b;}
 
@@ -944,7 +957,7 @@ document.getElementById('returnGame').onclick=()=>{
   gotoPly(back); // rebuilds the real game line; also clears excursionPly
 };
 document.getElementById('navFlip').onclick=()=>{
-  flipped=!flipped;render();
+  flipped=!flipped;render();paintEvalBar();
   if(lastArrows&&document.getElementById('showArrow').checked)drawArrows(lastArrows);
 };
 
@@ -1107,7 +1120,7 @@ function renderCcList(user,st,list){
         if(loadGameFromPgn(g.pgn)){
           // flip board if the searched user played black
           const blackIsUser=(g.black&&g.black.username&&g.black.username.toLowerCase()===user);
-          if(blackIsUser!==flipped){flipped=blackIsUser;render();}
+          if(blackIsUser!==flipped){flipped=blackIsUser;render();paintEvalBar();}
           st.textContent='Loaded — analyzing…';
           switchTab('review');
           document.getElementById('runReview').click();
