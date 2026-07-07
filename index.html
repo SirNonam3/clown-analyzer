@@ -195,6 +195,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 .sq .coord{font-weight:800;opacity:.6}
 #progress{border-radius:4px}
 #progressbar{background:linear-gradient(90deg,#8b7cf8,#4fd1c5)}
+.sq.wrong{background:var(--bad)!important}
 .credits{text-align:center;color:var(--muted);font-size:11px;padding:16px 0 22px}
 .credits a{color:var(--muted)}
 .credits a:hover{color:var(--accent)}
@@ -229,6 +230,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       <button data-tab="pgn">PGN</button>
       <button data-tab="fen">FEN</button>
       <button data-tab="review">Review</button>
+      <button data-tab="puzzles">Puzzles</button>
     </div>
 
     <!-- analysis (always visible) -->
@@ -306,6 +308,22 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       <button class="btn" id="runReview">Scan game</button>
       <div id="progress"><div id="progressbar"></div></div>
       <div class="moves" id="reviewList" style="max-height:none;overflow:visible;margin-top:10px"></div>
+    </div>
+
+    <!-- PUZZLES -->
+    <div class="tabpane" id="tab-puzzles">
+      <p class="small">Find the best move. Generate puzzles from your own analyzed games, or try the Lichess daily.</p>
+      <div class="row">
+        <button class="btn" id="pzFromGame">🧩 From my game</button>
+        <button class="btn sec" id="pzDaily">♟ Lichess daily</button>
+      </div>
+      <div id="pzStatus" class="small" style="margin-top:10px;font-weight:600"></div>
+      <div class="row" id="pzControls" style="display:none;margin-top:10px">
+        <button class="btn sec" id="pzHint">💡 Hint</button>
+        <button class="btn sec" id="pzSolution">Show solution</button>
+        <button class="btn sec" id="pzExit">Exit puzzle</button>
+      </div>
+      <div class="moves" id="pzList" style="max-height:none;overflow:visible;margin-top:10px"></div>
     </div>
   </div>
 </div>
@@ -613,6 +631,9 @@ let excursionPly=null; // ply where the user left the loaded game to try their o
 let liveAnal=null;     // latest engine data for the current position {fen, evW, best, secondEvW}
 let pendingJudge=null; // user just moved; classify once the new position's analysis lands
 let liveBadge=null;    // {sq, cat} quality badge for the user's tried move
+let puzzleMode=null;   // {solution:[uci], idx, solverWhite, solved} while a puzzle is active
+let puzzleReturn=null; // where to go back to on exit {had, ply}
+let puzzleCands=null;  // tactic candidates collected by the last review scan
 let reviewData=null; // per-ply analysis
 let reviewAccuracy=null; // {w, b} game accuracy %
 let reviewEvals=null;    // White-POV cp per position (plies+1)
@@ -731,6 +752,7 @@ let drag=null; // {from, startX, startY, clone, srcPiece, cell, moved}
 function tryMove(from,to,noAnim){
   const mv=game.moves({square:from,verbose:true}).find(m=>m.to===to);
   if(!mv)return false;
+  if(puzzleMode&&!puzzleMode.solved) return puzzleTry(mv,noAnim); // puzzle rules apply
   // first own move while a game is loaded = leaving the game line; remember where
   if(fullHistory && excursionPly===null) excursionPly=ply;
   // snapshot the current position's analysis before the move changes it
@@ -827,6 +849,7 @@ function afterMove(){
 let lastEval={cp:0};
 function triggerAnalysis(){
   if(!engineReady){return;}
+  if(puzzleMode&&!puzzleMode.solved){clearArrow();return;} // no engine spoilers during a puzzle
   if(!document.getElementById('autoAnalyze').checked){clearArrow();return;}
   const fen=game.fen();
   const depth=+document.getElementById('depthSel').value;
@@ -893,6 +916,115 @@ function clearJudge(){
   liveBadge=null; pendingJudge=null;
   const jt=document.getElementById('judgeText'); if(jt)jt.textContent='';
 }
+
+/* ---------- Puzzles ---------- */
+function pzStatus(s){document.getElementById('pzStatus').textContent=s;}
+function startPuzzle(opts){ // {fenPrev, introSan, fen, solution, solverWhite, title}
+  puzzleReturn={had:!!fullHistory, ply};
+  puzzleMode={solution:opts.solution.slice(), idx:0, solverWhite:opts.solverWhite, solved:false};
+  loadedMode=false; selected=null; clearJudge(); clearArrow();
+  flipped=!opts.solverWhite; // solver plays from the bottom
+  document.getElementById('pzControls').style.display='flex';
+  const go=()=>pzStatus((opts.solverWhite?'White':'Black')+' to move — find the best move!');
+  if(opts.fenPrev&&opts.introSan){ // show the opponent's error being played
+    game.load(opts.fenPrev); render();
+    pzStatus((opts.title||'Puzzle')+' — watch the last move…');
+    setTimeout(()=>{ const mv=game.move(opts.introSan,{sloppy:true}); render();
+      if(mv){sfxFor(mv);animateMoveObj(mv,false);} go(); },600);
+  } else { game.load(opts.fen); render(); go(); }
+}
+function puzzleTry(mv,noAnim){
+  let promo;
+  if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
+  const uci=mv.from+mv.to+(promo||'');
+  const want=puzzleMode.solution[puzzleMode.idx]||'';
+  const ok = uci===want || (!promo && want.length===4 && uci===want);
+  if(!ok){
+    selected=null; render();
+    const cell=boardEl.querySelector(`[data-sq="${mv.to}"]`);
+    if(cell){cell.classList.add('wrong'); setTimeout(()=>cell.classList.remove('wrong'),380);}
+    pzStatus('✗ Not the move — try again');
+    return true;
+  }
+  const made=game.move({from:mv.from,to:mv.to,promotion:promo||'q'});
+  sfxFor(made); selected=null; puzzleMode.idx++;
+  render(); if(!noAnim)animateMoveObj(made,false);
+  if(puzzleMode.idx>=puzzleMode.solution.length){ puzzleSolved(); return true; }
+  pzStatus('✓ Correct — keep going!');
+  setTimeout(()=>{ // opponent's forced reply
+    if(!puzzleMode)return;
+    const r=puzzleMode.solution[puzzleMode.idx++];
+    const rm=game.move({from:r.slice(0,2),to:r.slice(2,4),promotion:r.slice(4)||'q'});
+    if(rm){ sfxFor(rm); render(); animateMoveObj(rm,false); }
+    if(puzzleMode.idx>=puzzleMode.solution.length) puzzleSolved();
+    else pzStatus((puzzleMode.solverWhite?'White':'Black')+' to move — continue!');
+  },520);
+  return true;
+}
+function puzzleSolved(){
+  puzzleMode.solved=true;
+  pzStatus('🎉 Solved! Nice find.');
+  sfx('promote');
+  triggerAnalysis(); // analysis allowed again — explore freely
+}
+document.getElementById('pzHint').onclick=()=>{
+  if(!puzzleMode||puzzleMode.solved)return;
+  const want=puzzleMode.solution[puzzleMode.idx]; if(!want)return;
+  const cell=boardEl.querySelector(`[data-sq="${want.slice(0,2)}"]`);
+  if(cell){cell.classList.add('sel'); setTimeout(()=>{cell.classList.remove('sel');},800);}
+  pzStatus('💡 Look at the highlighted piece.');
+};
+document.getElementById('pzSolution').onclick=()=>{
+  if(!puzzleMode||puzzleMode.solved)return;
+  puzzleMode.solved=true;
+  const rest=puzzleMode.solution.slice(puzzleMode.idx);
+  let t=0;
+  rest.forEach(u=>{ t+=620; setTimeout(()=>{
+    const m=game.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||'q'});
+    if(m){sfxFor(m);render();animateMoveObj(m,false);}
+  },t); });
+  setTimeout(()=>{ pzStatus('Solution shown.'); triggerAnalysis(); },t+400);
+};
+document.getElementById('pzExit').onclick=()=>{
+  if(!puzzleMode)return;
+  puzzleMode=null;
+  document.getElementById('pzControls').style.display='none';
+  pzStatus('');
+  if(puzzleReturn&&puzzleReturn.had) gotoPly(puzzleReturn.ply);
+  else document.getElementById('newGame').click();
+};
+document.getElementById('pzFromGame').onclick=()=>{
+  const list=document.getElementById('pzList');
+  if(!puzzleCands){ pzStatus('Analyze a game first (Import → it auto-scans, or Review → Scan game).'); list.innerHTML=''; return; }
+  if(!puzzleCands.length){ pzStatus('No clean tactics in the last analyzed game — try another game.'); list.innerHTML=''; return; }
+  pzStatus(puzzleCands.length+' puzzle'+(puzzleCands.length>1?'s':'')+' found — click one.');
+  list.innerHTML=puzzleCands.map((c,k)=>`<div class="ccgame pzitem" data-k="${k}" style="padding:6px 8px;border-radius:6px;cursor:pointer">
+    <b>Puzzle ${k+1}</b> · move ${Math.floor(c.i/2)+1} · ${c.solverWhite?'White':'Black'} to play
+    <span class="num">punish the ${c.prevCat}</span></div>`).join('');
+  list.querySelectorAll('.pzitem').forEach(el=>{
+    el.onmouseenter=()=>el.style.background='var(--panel2)';
+    el.onmouseleave=()=>el.style.background='';
+    el.onclick=()=>{ const c=puzzleCands[+el.dataset.k];
+      startPuzzle({fenPrev:c.fenPrev, introSan:c.introSan, fen:c.fen, solution:[c.best],
+        solverWhite:c.solverWhite, title:'Your game'}); };
+  });
+};
+document.getElementById('pzDaily').onclick=async()=>{
+  pzStatus('Fetching daily puzzle…');
+  try{
+    const r=await fetch('https://lichess.org/api/puzzle/daily');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    const moves=j.game.pgn.trim().split(/\s+/);
+    const g=new Chess();
+    for(const s of moves){ if(!g.move(s,{sloppy:true}))throw new Error('pgn parse'); }
+    const g2=new Chess();
+    for(const s of moves.slice(0,-1)) g2.move(s,{sloppy:true});
+    startPuzzle({fenPrev:g2.fen(), introSan:moves[moves.length-1], fen:g.fen(),
+      solution:j.puzzle.solution, solverWhite:g.turn()==='w',
+      title:'Lichess daily · rating '+j.puzzle.rating});
+  }catch(e){ pzStatus('Could not load the daily puzzle ('+e.message+').'); }
+};
 function showEval(m,turn){
   let cp;
   if(m.mate!==undefined){cp=(m.mate>0?1:-1)*100000;}
@@ -1010,14 +1142,16 @@ function gotoPly(n){
 let fullHistory=null, startFen=null;
 
 /* ---------- Navigation buttons ---------- */
-document.getElementById('navStart').onclick=()=>{ if(fullHistory)gotoPly(0); };
-document.getElementById('navEnd').onclick=()=>{ if(fullHistory)gotoPly(fullHistory.length); };
+document.getElementById('navStart').onclick=()=>{ if(puzzleMode)return; if(fullHistory)gotoPly(0); };
+document.getElementById('navEnd').onclick=()=>{ if(puzzleMode)return; if(fullHistory)gotoPly(fullHistory.length); };
 document.getElementById('navPrev').onclick=()=>{
+  if(puzzleMode)return;
   if(fullHistory && excursionPly===null){ if(ply>0)gotoPly(ply-1); }
   else { const und=game.undo(); selected=null; clearJudge(); sfx('move'); afterMove(); if(und)animateMoveObj(und,true); }
 };
-document.getElementById('navNext').onclick=()=>{ if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
+document.getElementById('navNext').onclick=()=>{ if(puzzleMode)return; if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
 document.getElementById('returnGame').onclick=()=>{
+  if(puzzleMode)return;
   if(!fullHistory)return;
   const back=Math.max(0,Math.min(excursionPly??fullHistory.length,fullHistory.length));
   gotoPly(back); // rebuilds the real game line; also clears excursionPly
@@ -1039,7 +1173,7 @@ document.getElementById('newGame').onclick=()=>{
   game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;clearJudge();
   clearArrow();render();rebuildMoveList();triggerAnalysis();
 };
-document.getElementById('undoMove').onclick=()=>{const und=game.undo();selected=null;clearJudge();afterMove();if(und)animateMoveObj(und,true);};
+document.getElementById('undoMove').onclick=()=>{if(puzzleMode)return;const und=game.undo();selected=null;clearJudge();afterMove();if(und)animateMoveObj(und,true);};
 
 /* ---------- PGN loading (shared) ---------- */
 function loadGameFromPgn(pgn){
@@ -1552,6 +1686,22 @@ document.getElementById('runReview').onclick=async()=>{
     return (m+h)/2;
   };
   reviewAccuracy={ w: gameAcc(accsW), b: gameAcc(accsB) };
+
+  // collect one-move tactic puzzles: the opponent just erred and there is a single clearly-best punish
+  puzzleCands=[];
+  for(let i=1;i<fens.length;i++){
+    const pcat=reviewData[i-1]&&reviewData[i-1].cat;
+    if(pcat!=='mistake'&&pcat!=='blunder')continue;
+    if(!bestUci[i]||second[i]==null)continue;
+    const turn=fens[i].split(' ')[1], sign=turn==='w'?1:-1;
+    const wp=winPct(sign*evals[i]);
+    if(wp<60)continue;                        // solver must actually be winning
+    const gap=wp-winPct(sign*second[i]);
+    if(gap<15)continue;                       // solution must be unique
+    puzzleCands.push({i, fen:fens[i], fenPrev:fens[i-1], introSan:fullHistory[i-1],
+      best:bestUci[i], solverWhite:turn==='w', gain:Math.round(gap), prevCat:pcat});
+  }
+
   prog.style.display='none';bar.style.width='0';
   renderReview();
   gotoPly(0); // scan done — start reviewing from move 0
@@ -1711,7 +1861,7 @@ function highlightReview(){
 /* mouse wheel over the board: wheel up = next move, wheel down = previous */
 let wheelAcc=0;
 document.querySelector('.boardbox').addEventListener('wheel',e=>{
-  if(!fullHistory)return; // only while a game is loaded
+  if(!fullHistory||puzzleMode)return; // only while a game is loaded (and not solving a puzzle)
   e.preventDefault();
   if(wheelAcc!==0 && Math.sign(e.deltaY)!==Math.sign(wheelAcc)) wheelAcc=0; // direction change resets
   wheelAcc+=e.deltaY;
