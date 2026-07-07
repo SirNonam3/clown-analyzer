@@ -235,6 +235,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
     <div class="bestmove" id="analysisBox">
       <div>Engine: <b id="bestText">—</b> <span id="depthText" class="small"></span></div>
       <div id="pvText" class="small" style="margin-top:4px"></div>
+      <div id="judgeText" class="small" style="margin-top:4px"></div>
     </div>
     <div class="row">
       <label class="small">Depth
@@ -609,6 +610,9 @@ let loadedMode=false;// true when viewing an imported game
 let flipped=false;
 let selected=null;   // selected square
 let excursionPly=null; // ply where the user left the loaded game to try their own moves
+let liveAnal=null;     // latest engine data for the current position {fen, evW, best, secondEvW}
+let pendingJudge=null; // user just moved; classify once the new position's analysis lands
+let liveBadge=null;    // {sq, cat} quality badge for the user's tried move
 let reviewData=null; // per-ply analysis
 let reviewAccuracy=null; // {w, b} game accuracy %
 let reviewEvals=null;    // White-POV cp per position (plies+1)
@@ -668,6 +672,17 @@ function render(){
       cell.appendChild(b);
     }
   }
+  // live judgment badge for a move the user just tried (play mode / excursion)
+  if(liveBadge && !loadedMode){
+    const meta=CATS[liveBadge.cat];
+    const cell=boardEl.querySelector(`[data-sq="${liveBadge.sq}"]`);
+    if(meta && cell){
+      const b=document.createElement('span');
+      b.className='movebadge'; b.style.background=meta.color;
+      b.textContent=meta.icon; b.title=meta.label;
+      cell.appendChild(b);
+    }
+  }
   // "Return to game" appears only while trying own moves off a loaded game
   const rg=document.getElementById('returnGame');
   if(rg)rg.style.display=(fullHistory&&excursionPly!==null)?'block':'none';
@@ -718,11 +733,29 @@ function tryMove(from,to,noAnim){
   if(!mv)return false;
   // first own move while a game is loaded = leaving the game line; remember where
   if(fullHistory && excursionPly===null) excursionPly=ply;
+  // snapshot the current position's analysis before the move changes it
+  const fenBefore=game.fen();
+  const snap=(liveAnal&&liveAnal.fen===fenBefore)?liveAnal:null;
+  const legalCount=game.moves().length;
+  const hist=game.history({verbose:true});
+  const prevMv=hist.length?hist[hist.length-1]:null;
   let promo;
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
   const made=game.move({from,to,promotion:promo||'q'});
   sfxFor(made);
   selected=null;
+  clearJudge();
+  if(made.san.includes('#')){ // mate delivered: no need to wait for the engine
+    const sac=isSacrifice(game.fen(),made.color,made.to);
+    setTimeout(()=>showJudge(made.san,made.to,sac?'brilliant':'best'),0);
+  } else if(snap&&snap.best&&!game.game_over()){
+    pendingJudge={fenAfter:game.fen(), beforeEvW:snap.evW, best:snap.best, secondEvW:snap.secondEvW,
+      moverWhite:made.color==='w', to:made.to, san:made.san,
+      playedUci:(made.from+made.to+(made.promotion||'')).toLowerCase(),
+      sac:isSacrifice(game.fen(),made.color,made.to),
+      trivialRecap:!!(made.captured&&prevMv&&prevMv.captured&&prevMv.to===made.to),
+      legalCount};
+  }
   afterMove();
   if(!noAnim)animateMoveObj(made,false);
   return true;
@@ -799,11 +832,18 @@ function triggerAnalysis(){
   const depth=+document.getElementById('depthSel').value;
   const turn=game.turn();
   setBest('thinking…','');
+  const sv=p=>p.mate!==undefined?(p.mate>0?100000:-100000):(p.cp||0);
+  const toW=s=>turn==='b'?-s:s;
   analyze(fen,depth,(m,byPv,idx)=>{
     if(idx===1){ // eval bar + best line follow the top engine line only
       showEval(m,turn);
       document.getElementById('depthText').textContent='(d'+(m.depth||'')+')';
       if(m.pv) setBest(prettyPV(fen,m.pv.slice(0,1))[0]||m.pv[0], prettyPV(fen,m.pv.slice(0,6)).join(' '));
+    }
+    if(byPv){ // keep a snapshot of this position's analysis (used to judge the next tried move)
+      liveAnal={fen, evW:byPv[1]?toW(sv(byPv[1])):0,
+        best:(byPv[1]&&byPv[1].pv)?byPv[1].pv[0]:null,
+        secondEvW:byPv[2]?toW(sv(byPv[2])):null};
     }
     if(byPv && document.getElementById('showArrow').checked){
       // alternatives only earn an arrow if they're close to the best move:
@@ -825,7 +865,33 @@ function triggerAnalysis(){
   },(bm,m)=>{
     showEval(m,turn);
     document.getElementById('depthText').textContent='(final d'+(m.depth||'')+')';
+    const afterEvW=toW(sv(m));
+    if(liveAnal&&liveAnal.fen===fen)liveAnal.evW=afterEvW;
+    // judge the move the user just tried, now that its position is fully analyzed
+    if(pendingJudge && pendingJudge.fenAfter===fen){
+      const j=pendingJudge; pendingJudge=null;
+      const sign=j.moverWhite?1:-1;
+      const wb=winPct(sign*j.beforeEvW), wa=winPct(sign*afterEvW);
+      const gapWl=(j.secondEvW!=null)?(wb-winPct(sign*j.secondEvW)):0;
+      const cat=classify({wl:wb-wa, gapWl,
+        isBest:j.playedUci.slice(0,4)===(j.best||'').slice(0,4),
+        sac:j.sac, trivialRecap:j.trivialRecap,
+        evalAfterMover:sign*afterEvW, evalBeforeMover:sign*j.beforeEvW,
+        legalCount:j.legalCount, isBook:false});
+      showJudge(j.san, j.to, cat);
+    }
   });
+}
+function showJudge(san,sq,cat){
+  liveBadge={sq, cat};
+  render();
+  const mcat=CATS[cat];
+  const jt=document.getElementById('judgeText');
+  if(jt)jt.innerHTML=`Your move <b>${san}</b> <span class="rs-badge" style="background:${mcat.color}">${mcat.icon}</span> ${mcat.label}`;
+}
+function clearJudge(){
+  liveBadge=null; pendingJudge=null;
+  const jt=document.getElementById('judgeText'); if(jt)jt.textContent='';
 }
 function showEval(m,turn){
   let cp;
@@ -928,7 +994,7 @@ function gotoPly(n){
   game.reset();
   if(startFen) game.load(startFen);
   for(let i=0;i<n;i++) game.move(full[i]);
-  ply=n; loadedMode=true; selected=null; excursionPly=null;
+  ply=n; loadedMode=true; selected=null; excursionPly=null; clearJudge();
   if(n>0) sfxFor(game.history({verbose:true}).slice(-1)[0]);
   render();
   if(Math.abs(n-prevPly)===1){ // single step: slide the piece
@@ -948,7 +1014,7 @@ document.getElementById('navStart').onclick=()=>{ if(fullHistory)gotoPly(0); };
 document.getElementById('navEnd').onclick=()=>{ if(fullHistory)gotoPly(fullHistory.length); };
 document.getElementById('navPrev').onclick=()=>{
   if(fullHistory && excursionPly===null){ if(ply>0)gotoPly(ply-1); }
-  else { const und=game.undo(); selected=null; sfx('move'); afterMove(); if(und)animateMoveObj(und,true); }
+  else { const und=game.undo(); selected=null; clearJudge(); sfx('move'); afterMove(); if(und)animateMoveObj(und,true); }
 };
 document.getElementById('navNext').onclick=()=>{ if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
 document.getElementById('returnGame').onclick=()=>{
@@ -970,10 +1036,10 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.d
 
 /* ---------- Play tab ---------- */
 document.getElementById('newGame').onclick=()=>{
-  game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;
+  game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;clearJudge();
   clearArrow();render();rebuildMoveList();triggerAnalysis();
 };
-document.getElementById('undoMove').onclick=()=>{const und=game.undo();selected=null;afterMove();if(und)animateMoveObj(und,true);};
+document.getElementById('undoMove').onclick=()=>{const und=game.undo();selected=null;clearJudge();afterMove();if(und)animateMoveObj(und,true);};
 
 /* ---------- PGN loading (shared) ---------- */
 function loadGameFromPgn(pgn){
@@ -986,7 +1052,7 @@ function loadGameFromPgn(pgn){
   if(fenH){startFen=fenH[1];}
   gameMeta=startFen?{opening:null,eco:null,bookPlies:0,white:null,black:null,result:null}:extractGameMeta(pgn,fullHistory);
   game.reset(); if(startFen)game.load(startFen);
-  ply=0;loadedMode=true;reviewData=null;reviewEvals=null;reviewAccuracy=null;selected=null;excursionPly=null;
+  ply=0;loadedMode=true;reviewData=null;reviewEvals=null;reviewAccuracy=null;selected=null;excursionPly=null;clearJudge();
   document.getElementById('reviewList').innerHTML='';
   render();
   document.getElementById('moveList').innerHTML=renderMoveSpans(fullHistory,0);
@@ -1134,7 +1200,7 @@ function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>
 document.getElementById('loadFen').onclick=()=>{
   const fen=document.getElementById('fenInput').value.trim();
   if(!game.load(fen)){alert('Invalid FEN.');return;}
-  fullHistory=null;startFen=fen;loadedMode=false;selected=null;
+  fullHistory=null;startFen=fen;loadedMode=false;selected=null;clearJudge();
   render();rebuildMoveList();triggerAnalysis();
 };
 document.getElementById('copyFen').onclick=()=>{navigator.clipboard.writeText(game.fen());setStatus('FEN copied');};
@@ -1641,6 +1707,19 @@ function highlightReview(){
   }
   document.querySelectorAll('#reviewList .mv').forEach(s=>s.classList.toggle('cur',+s.dataset.ply===ply));
 }
+
+/* mouse wheel over the board: wheel up = next move, wheel down = previous */
+let wheelAcc=0;
+document.querySelector('.boardbox').addEventListener('wheel',e=>{
+  if(!fullHistory)return; // only while a game is loaded
+  e.preventDefault();
+  if(wheelAcc!==0 && Math.sign(e.deltaY)!==Math.sign(wheelAcc)) wheelAcc=0; // direction change resets
+  wheelAcc+=e.deltaY;
+  let steps=0;
+  while(wheelAcc<=-80 && steps<2){ wheelAcc+=80; steps++; document.getElementById('navNext').click(); }
+  steps=0;
+  while(wheelAcc>=80 && steps<2){ wheelAcc-=80; steps++; document.getElementById('navPrev').click(); }
+},{passive:false});
 
 /* keyboard nav */
 document.addEventListener('keydown',e=>{
