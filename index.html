@@ -122,12 +122,10 @@
   .rs-row{display:grid;grid-template-columns:1fr 28px 28px;align-items:center;font-size:12px;padding:3px 0}
   .rs-row .ic{display:inline-flex;align-items:center;gap:7px}
   .rs-badge{min-width:16px;height:16px;padding:0 3px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex:0 0 auto}
-  .movebadge{--bsz:calc(var(--bsize)/8*0.40);
-    position:absolute;top:calc(var(--bsz)*-0.12);right:calc(var(--bsz)*-0.12);
-    min-width:var(--bsz);height:var(--bsz);padding:0 calc(var(--bsz)*0.08);border-radius:50%;
+  .movebadge{position:absolute;border-radius:50%;padding:0;
     display:flex;align-items:center;justify-content:center;
-    font-size:calc(var(--bsz)*0.48);font-weight:800;color:#fff;line-height:1;
-    border:calc(var(--bsz)*0.07) solid #1e1f22;z-index:6;box-shadow:0 2px 8px #000a}
+    font-weight:800;color:#fff;line-height:1;
+    border:3px solid #1e1f22;z-index:6;box-shadow:0 2px 8px #000a}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -648,6 +646,21 @@ const GLYPH={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
 
 /* ---------- Board rendering ---------- */
 const boardEl=document.getElementById('board');
+/* Corner quality badge sized from the real rendered square (chess.com-style). */
+function boardBadge(cell,meta){
+  const cs=boardEl.getBoundingClientRect().width/8;
+  const bs=Math.max(18,Math.round(cs*0.44));
+  const b=document.createElement('span');
+  b.className='movebadge';
+  b.style.background=meta.color;
+  b.textContent=meta.icon; b.title=meta.label;
+  b.style.width=b.style.height=b.style.minWidth=bs+'px';
+  b.style.fontSize=Math.round(bs*0.5)+'px';
+  b.style.borderWidth=Math.max(2,Math.round(bs*0.08))+'px';
+  b.style.top=Math.round(-bs*0.18)+'px';
+  b.style.right=Math.round(-bs*0.18)+'px';
+  cell.appendChild(b);
+}
 function render(){
   boardEl.innerHTML='';
   const board=game.board(); // [rank8..rank1][file a..h]
@@ -689,23 +702,13 @@ function render(){
   if(reviewData && loadedMode && ply>0 && reviewData[ply-1] && last){
     const meta=CATS[reviewData[ply-1].cat];
     const cell=boardEl.querySelector(`[data-sq="${last.to}"]`);
-    if(meta && cell){
-      const b=document.createElement('span');
-      b.className='movebadge'; b.style.background=meta.color;
-      b.textContent=meta.icon; b.title=meta.label;
-      cell.appendChild(b);
-    }
+    if(meta && cell) boardBadge(cell,meta);
   }
   // live judgment badge for a move the user just tried (play mode / excursion)
   if(liveBadge && !loadedMode){
     const meta=CATS[liveBadge.cat];
     const cell=boardEl.querySelector(`[data-sq="${liveBadge.sq}"]`);
-    if(meta && cell){
-      const b=document.createElement('span');
-      b.className='movebadge'; b.style.background=meta.color;
-      b.textContent=meta.icon; b.title=meta.label;
-      cell.appendChild(b);
-    }
+    if(meta && cell) boardBadge(cell,meta);
   }
   // "Return to game" appears only while trying own moves off a loaded game
   const rg=document.getElementById('returnGame');
