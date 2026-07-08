@@ -243,7 +243,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
     <div class="row">
       <label class="small">Depth
         <select id="depthSel">
-          <option>12</option><option selected>15</option><option>18</option><option>20</option><option>22</option>
+          <option>15</option><option selected>18</option><option>20</option><option>22</option><option>25</option>
         </select>
       </label>
       <label class="small"><input type="checkbox" id="autoAnalyze" checked> Auto-analyze</label>
@@ -304,7 +304,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
     <div class="tabpane" id="tab-review">
       <p class="small">Load a game from the <b>Import</b> or <b>PGN</b> tab first, then scan it. Each move gets a quality badge (shown on the board too).</p>
       <label class="small">Scan depth
-        <select id="reviewDepth"><option value="10">10 (fast)</option><option value="12">12</option><option value="14" selected>14 (balanced)</option><option value="16">16 (deep)</option></select>
+        <select id="reviewDepth"><option value="14">14 (fast)</option><option value="18" selected>18 (balanced)</option><option value="22">22 (deep)</option><option value="25">25 (max)</option></select>
       </label>
       <button class="btn" id="runReview">Scan game</button>
       <div id="progress"><div id="progressbar"></div></div>
@@ -458,7 +458,7 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
       clearTimeout(w.__wd);
       w.__wd=setTimeout(()=>{ // worker stalled: requeue this position and replace the worker
         requeue.push(i); try{w.terminate();}catch(e){} workers.delete(w); spawn();
-      }, 15000);
+      }, 15000+Math.max(0,depth-16)*4000); // deep searches get more headroom
     }
     function handler(w){ return (e)=>{
       const line=typeof e.data==='string'?e.data:'';
@@ -514,7 +514,7 @@ function onEngineMsg(e){
   }
 }
 let watchdog=null;
-function armWatchdog(){ clearTimeout(watchdog); watchdog=setTimeout(()=>{ console.warn('engine silent — moving on'); finishCurrent(null); }, 9000); }
+function armWatchdog(){ clearTimeout(watchdog); watchdog=setTimeout(()=>{ console.warn('engine silent — moving on'); finishCurrent(null); }, 14000); }
 function finishCurrent(bm){
   if(!current)return;
   clearTimeout(watchdog);
