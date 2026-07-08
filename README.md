@@ -5,7 +5,7 @@ Free chess game analysis in your browser. How many Clown moves did you play?
 ## Features
 
 - **Import games** from Chess.com or Lichess (username or profile link), or paste any PGN
-- **Full game review** — every move graded from **Brilliant (!!)** to **Clown (??)**, powered by Stockfish running locally in your browser (WASM, parallel workers)
+- **Full game review** — every move graded from **Brilliant (!!)** to **Clown (??)**, powered by **Stockfish 18 NNUE** running locally in your browser (WASM, parallel workers)
 - **Accuracy % and estimated Elo** for both players
 - **Eval graph** (clickable), key moments, best & worst move highlights, opening detection
 - Deep cached evaluations for opening positions via the Lichess cloud API

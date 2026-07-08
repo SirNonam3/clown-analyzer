@@ -4,7 +4,8 @@ The site is 100% static — no server code — so hosting is free.
 
 ## Files that must be uploaded together
 - `index.html`
-- `stockfish.wasm.js`, `stockfish.wasm`, `stockfish.js`  (the engine — do not omit)
+- `stockfish-18-lite-single.js`, `stockfish-18-lite-single.wasm`  (main engine — Stockfish 18 NNUE)
+- `stockfish.wasm.js`, `stockfish.wasm`, `stockfish.js`  (fallback engines — do not omit)
 - `sounds/` folder (all mp3s)
 
 Not needed online: `start-server.bat`, `freesound_community-chess-pieces-60890.mp3` (legacy, unused), `DEPLOY.md`.

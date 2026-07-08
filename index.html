@@ -343,25 +343,34 @@ const engineQueue=[]; // {fen, depth, onInfo, onDone}
 let current=null;
 
 const SF_URL='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
-/* Prefer the fast local WASM engine (works when served over http); fall back to
-   the CDN asm.js blob worker for file:// where local workers are blocked. */
-let SF_MODE=(location.protocol==='http:'||location.protocol==='https:')?'wasm-local':'asm-cdn';
+/* Engine preference: Stockfish 18 NNUE (local wasm) → Stockfish 10 (local wasm)
+   → CDN asm.js blob worker (file:// where local workers are blocked). */
+let SF_MODE=(location.protocol==='http:'||location.protocol==='https:')?'nnue-local':'asm-cdn';
 function makeSF(){
+  if(SF_MODE==='nnue-local'){
+    try{ return new Worker('stockfish-18-lite-single.js'); }catch(e){ SF_MODE='wasm-local'; }
+  }
   if(SF_MODE==='wasm-local'){
     try{ return new Worker('stockfish.wasm.js'); }catch(e){ SF_MODE='asm-cdn'; }
   }
   return new Worker(URL.createObjectURL(new Blob([`importScripts('${SF_URL}');`],{type:'application/javascript'})));
 }
+const SF_LABEL={'nnue-local':'Stockfish 18','wasm-local':'Stockfish 10','asm-cdn':'Stockfish 10 asm'};
 let engineInitTimer=null;
 function initEngine(){
   try{
     engine=makeSF();
   }catch(e){ setStatus('Engine failed to load'); return; }
-  // if the chosen engine doesn't report ready quickly, fall back to CDN asm.js
+  // if the chosen engine doesn't report ready quickly, step down the fallback chain
   clearTimeout(engineInitTimer);
   engineInitTimer=setTimeout(()=>{
-    if(!engineReady && SF_MODE==='wasm-local'){ console.warn('wasm engine slow to init — falling back to asm.js'); SF_MODE='asm-cdn'; try{engine&&engine.terminate();}catch(e){} engine=null; initEngine(); }
-  }, 7000);
+    if(engineReady)return;
+    if(SF_MODE==='nnue-local')SF_MODE='wasm-local';
+    else if(SF_MODE==='wasm-local')SF_MODE='asm-cdn';
+    else return;
+    console.warn('engine slow to init — falling back to '+SF_MODE);
+    try{engine&&engine.terminate();}catch(e){} engine=null; initEngine();
+  }, 8000);
   engine.onmessage=onEngineMsg;
   engine.onerror=(e)=>{ console.error('engine error',e.message||e); setStatus('Engine error — reloading…'); recoverEngine(); };
   engine.postMessage('uci');
@@ -422,7 +431,7 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
   const requeue=[];
   let next=0, filled=0;
   const workers=new Set();
-  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, 12, total));
+  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, 8, total)); // NNUE workers use more RAM
 
   // pre-fill from preset (deep cloud evals)
   if(preset)for(let i=0;i<total;i++){ if(preset[i]){results[i]=preset[i];filled++;} }
@@ -484,7 +493,7 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
 function onEngineMsg(e){
   const line=typeof e.data==='string'?e.data:'';
   if(line==='readyok'||line.startsWith('uciok')){
-    if(!engineReady){engineReady=true;clearTimeout(engineInitTimer);setStatus('Engine ready ('+(SF_MODE==='wasm-local'?'WASM':'asm.js')+')');pump();}
+    if(!engineReady){engineReady=true;clearTimeout(engineInitTimer);setStatus('Engine ready · '+(SF_LABEL[SF_MODE]||SF_MODE));pump();}
     return;
   }
   if(!current) return;
