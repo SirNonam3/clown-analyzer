@@ -1632,11 +1632,11 @@ function classify(d){
   const winsMat    = d.gapWl>=10 && d.evalAfterMover>=200;          // non-obvious and clearly winning after
   if(d.isBest && !d.sac && !d.trivialRecap && d.legalCount>1 && wl<=1.5 && (onlyMove||winsMat)) return 'great';
   if(d.isBook && wl<=6) return 'book';
-  if(d.isBest || wl<=0.8) return 'best';
-  if(wl<=3) return 'excellent';
-  if(wl<=6) return 'good';
-  if(wl<=12) return 'inaccuracy';
-  if(wl<=22) return 'mistake';
+  if(d.isBest) return 'best';        // only the engine's #1 move is "Best" (chess.com-style)
+  if(wl<=2)  return 'excellent';     // near-best but not the top move
+  if(wl<=5)  return 'good';
+  if(wl<=11) return 'inaccuracy';
+  if(wl<=20) return 'mistake';
   return 'blunder';
 }
 
