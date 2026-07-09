@@ -304,7 +304,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
     <div class="tabpane" id="tab-review">
       <p class="small">Load a game from the <b>Import</b> or <b>PGN</b> tab first, then scan it. Each move gets a quality badge (shown on the board too).</p>
       <label class="small">Scan depth
-        <select id="reviewDepth"><option value="14">14 (fast)</option><option value="18" selected>18 (balanced)</option><option value="22">22 (deep)</option><option value="25">25 (max)</option></select>
+        <select id="reviewDepth"><option value="14">14 (fast)</option><option value="16" selected>16 (balanced)</option><option value="20">20 (deep)</option><option value="25">25 (max)</option></select>
       </label>
       <button class="btn" id="runReview">Scan game</button>
       <div id="progress"><div id="progressbar"></div></div>
@@ -431,7 +431,7 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
   const requeue=[];
   let next=0, filled=0;
   const workers=new Set();
-  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, 8, total)); // NNUE workers use more RAM
+  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, 12, total));
 
   // pre-fill from preset (deep cloud evals)
   if(preset)for(let i=0;i<total;i++){ if(preset[i]){results[i]=preset[i];filled++;} }
@@ -782,14 +782,15 @@ function tryMove(from,to,noAnim){
   sfxFor(made);
   selected=null;
   clearJudge();
+  const capVal=PVAL[made.captured]||0;
   if(made.san.includes('#')){ // mate delivered: no need to wait for the engine
-    const sac=isSacrifice(game.fen(),made.color,made.to);
+    const sac=isSacrifice(game.fen(),made.color,made.to,capVal);
     setTimeout(()=>showJudge(made.san,made.to,sac?'brilliant':'best'),0);
   } else if(snap&&snap.best&&!game.game_over()){
     pendingJudge={fenAfter:game.fen(), beforeEvW:snap.evW, best:snap.best, secondEvW:snap.secondEvW,
       moverWhite:made.color==='w', to:made.to, san:made.san,
       playedUci:(made.from+made.to+(made.promotion||'')).toLowerCase(),
-      sac:isSacrifice(game.fen(),made.color,made.to),
+      sac:isSacrifice(game.fen(),made.color,made.to,capVal),
       trivialRecap:!!(made.captured&&prevMv&&prevMv.captured&&prevMv.to===made.to),
       legalCount};
   }
@@ -1482,10 +1483,11 @@ const CATS={
   book:{label:'Theoretical',icon:'▦',color:'#b07a3c',group:'good'},
   inaccuracy:{label:'Strange',icon:'?!',color:'#e0c04a',group:'bad'},
   mistake:{label:'Bad',icon:'?',color:'#e08a3c',group:'bad'},
+  miss:{label:'Miss',icon:'✗',color:'#e0654a',group:'bad'},
   blunder:{label:'Clown',icon:'??',color:'#d24a4a',group:'bad'},
 };
 const GOOD_ORDER=['brilliant','great','best','excellent','good','book'];
-const BAD_ORDER=['inaccuracy','mistake','blunder'];
+const BAD_ORDER=['inaccuracy','mistake','miss','blunder'];
 const PVAL={p:1,n:3,b:3,r:5,q:9,k:0};
 /* win% from centipawns — Lichess model */
 const winPct=cp=>50+50*(2/(1+Math.exp(-0.00368208*Math.max(-10000,Math.min(10000,cp))))-1);
@@ -1562,7 +1564,7 @@ function buildReportCard(){
     x.fillStyle='rgba(236,233,248,0.92)';x.fill();
     x.strokeStyle='rgba(255,255,255,0.18)';x.setLineDash([4,4]);
     x.beginPath();x.moveTo(gx,gy+gh/2);x.lineTo(gx+gw,gy+gh/2);x.stroke();x.setLineDash([]);
-    const DOT={brilliant:1,great:1,inaccuracy:1,mistake:1,blunder:1};
+    const DOT={brilliant:1,great:1,inaccuracy:1,mistake:1,miss:1,blunder:1};
     for(let i=0;i<reviewData.length;i++){
       const d=reviewData[i];
       if(d&&DOT[d.cat]){
@@ -1598,24 +1600,26 @@ async function shareReport(){
 /* Sacrifice check: is the piece the mover just moved to `toSq` offered up for a
    net material loss (>=2)? Only counts a real piece (minor+), and only the moved
    piece — so unrelated hanging material doesn't false-trigger "brilliant". */
-function isSacrifice(fenAfter, mover, toSq){
+/* capturedVal = value the move itself captured (so a trade/recapture isn't seen as a sacrifice). */
+function isSacrifice(fenAfter, mover, toSq, capturedVal){
   let g;
   try{ g=new Chess(fenAfter); }catch(e){ return false; }
   if(g.turn()===mover) return false;            // opponent must be to move
   const piece=g.get(toSq); if(!piece) return false;
-  const V=PVAL[piece.type]||0; if(V<3) return false; // ignore pawn "sacs"
+  const V=PVAL[piece.type]||0; if(V<3) return false; // only sac a real piece (minor+)
   const caps=g.moves({verbose:true}).filter(m=>m.to===toSq && m.captured);
   if(!caps.length) return false;                // moved piece isn't even attacked
+  const gained=capturedVal||0;                  // material this move already won
   let bestNet=99;                               // opponent picks the line worst for mover
   for(const c of caps){
     const g2=new Chess(fenAfter); g2.move({from:c.from,to:c.to,promotion:'q'});
     let W=0; // can the mover recapture on that square?
     g2.moves({verbose:true}).filter(m=>m.to===toSq && m.captured)
       .forEach(r=>{ W=Math.max(W, PVAL[r.captured]||0); });
-    const net = W - V;                          // mover loses V, may regain W
+    const net = gained - V + W;                  // net material: won − piece lost + recapture
     if(net<bestNet) bestNet=net;
   }
-  return bestNet <= -2;
+  return bestNet <= -2;                          // ends at least a minor piece down = a real sac
 }
 /* Classify by win-probability loss (wl, 0-100) — auto-relaxes in decided positions
    where big cp swings don't change the result. */
@@ -1636,6 +1640,10 @@ function classify(d){
   if(wl<=2.5) return 'excellent';         // clearly near-best
   if(wl<=6)   return 'good';
   if(wl<=11)  return 'inaccuracy';
+  // Miss: you had a winning position (>=80% win) and let a big chunk slip, but you're
+  // still not losing (>=45%). Missed the kill rather than throwing the game.
+  const winBefore=winPct(d.evalBeforeMover), winAfter=winPct(d.evalAfterMover);
+  if(winBefore>=80 && winAfter>=45) return 'miss';
   if(wl<=20)  return 'mistake';
   return 'blunder';
 }
@@ -1682,7 +1690,7 @@ document.getElementById('runReview').onclick=async()=>{
     if(second[i]!==null) gapWl=winPct(sign*before)-winPct(sign*second[i]);
     let legalCount=2;
     try{ legalCount=new Chess(fens[i]).moves().length; }catch(e){}
-    const sac = isSacrifice(fens[i+1], moverWhite?'w':'b', verbose[i].to);
+    const sac = isSacrifice(fens[i+1], moverWhite?'w':'b', verbose[i].to, PVAL[verbose[i].captured]||0);
     // routine recapture on the square the opponent just captured on — never "Awesome"
     const prev=i>0?verbose[i-1]:null;
     const trivialRecap=!!(verbose[i].captured && prev && prev.captured && prev.to===verbose[i].to);
@@ -1768,7 +1776,7 @@ function renderReview(){
     let line='';
     for(let i=0;i<n;i++)line+=(i?' L':'M')+X(i).toFixed(1)+','+Y(reviewEvals[i]).toFixed(1);
     let dots='';
-    const DOT={brilliant:1,great:1,inaccuracy:1,mistake:1,blunder:1};
+    const DOT={brilliant:1,great:1,inaccuracy:1,mistake:1,miss:1,blunder:1};
     for(let i=0;i<fullHistory.length;i++){
       const d=reviewData[i];
       if(d&&DOT[d.cat])dots+=`<circle cx="${X(i+1).toFixed(1)}" cy="${Y(reviewEvals[i+1]).toFixed(1)}" r="3.4" fill="${CATS[d.cat].color}" stroke="#0d0f1a" stroke-width="1.2"><title>${i%2?'':(i/2+1)+'. '}${fullHistory[i]} — ${CATS[d.cat].label}</title></circle>`;
@@ -1784,7 +1792,7 @@ function renderReview(){
   }
 
   // best & worst move per side
-  const RANK={brilliant:6,great:5,best:4,excellent:3,good:2,book:2,inaccuracy:1,mistake:1,blunder:0};
+  const RANK={brilliant:6,great:5,best:4,excellent:3,good:2,book:2,inaccuracy:1,miss:1,mistake:1,blunder:0};
   function pickBest(white){
     let bi=-1,br=-1,bcl=1e9;
     for(let i=0;i<fullHistory.length;i++){const d=reviewData[i];if(!d||d.moverWhite!==white)continue;
