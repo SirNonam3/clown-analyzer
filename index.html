@@ -197,6 +197,8 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 #progress{border-radius:4px}
 #progressbar{background:linear-gradient(90deg,#8b7cf8,#4fd1c5)}
 .sq.wrong{background:var(--bad)!important}
+.src{display:inline-block;font-size:9px;font-weight:800;padding:1px 4px;border-radius:4px;vertical-align:middle;color:#fff}
+.src-cc{background:#6b9b37} .src-li{background:#7b61a8}
 .credits{text-align:center;color:var(--muted);font-size:11px;padding:16px 0 22px}
 .credits a{color:var(--muted)}
 .credits a:hover{color:var(--accent)}
@@ -266,21 +268,21 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       <button class="btn sec" id="undoMove">Undo</button>
     </div>
 
-    <!-- CHESS.COM -->
+    <!-- IMPORT -->
     <div class="tabpane" id="tab-chesscom">
-      <label class="fld">Chess.com or Lichess username / profile link</label>
-      <input type="text" id="ccUser" placeholder="hikaru · chess.com/member/hikaru · lichess.org/@/thibault">
+      <label class="fld">♟ Chess.com username</label>
+      <input type="text" id="ccUserCc" placeholder="hikaru  (or chess.com/member/hikaru)">
+      <label class="fld" style="margin-top:8px">🔶 Lichess username</label>
+      <input type="text" id="ccUserLi" placeholder="thibault  (or lichess.org/@/thibault)">
+      <p class="small" style="margin:6px 0 0">Fill either or both — games from both accounts are merged, newest first.</p>
       <div class="row" style="margin-top:8px">
-        <label class="small">Site
-          <select id="ccSite"><option value="chesscom">Chess.com</option><option value="lichess">Lichess</option></select>
-        </label>
-        <label class="small">Month
+        <label class="small">Chess.com month
           <select id="ccMonth"><option value="">latest</option></select>
         </label>
         <button class="btn" id="ccFetch">Fetch games</button>
       </div>
       <div class="small" id="ccStatus" style="margin-top:8px"></div>
-      <div class="moves" id="ccList" style="max-height:300px;margin-top:8px"></div>
+      <div class="moves" id="ccList" style="max-height:340px;margin-top:8px"></div>
     </div>
 
     <!-- PGN -->
@@ -1231,6 +1233,7 @@ async function ccApi(url){
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
+/* Each fetcher tags games with _source, _me (your username), _ts (ms) for merging. */
 async function fetchChessCom(user){
   let archiveUrl=document.getElementById('ccMonth').value;
   if(!archiveUrl){
@@ -1239,7 +1242,8 @@ async function fetchChessCom(user){
     archiveUrl=arch.archives[arch.archives.length-1];
   }
   const data=await ccApi(archiveUrl);
-  return (data.games||[]).filter(g=>g.pgn).reverse(); // newest first
+  return (data.games||[]).filter(g=>g.pgn)
+    .map(g=>Object.assign(g,{_source:'chesscom',_me:user,_ts:(g.end_time||0)*1000}));
 }
 /* Lichess: ND-JSON stream of the user's last games, mapped to the chess.com shape. */
 async function fetchLichess(user){
@@ -1255,23 +1259,18 @@ async function fetchLichess(user){
               rating:p.rating||'',
               result:j.winner===c?'win':(j.winner?'loss':'draw') };
     };
-    return{ pgn:j.pgn, time_class:j.speed||'', white:side('white'), black:side('black') };
+    return{ pgn:j.pgn, time_class:j.speed||'', white:side('white'), black:side('black'),
+            _source:'lichess', _me:user, _ts:j.createdAt||0 };
   }).filter(g=>g.pgn);
 }
-document.getElementById('ccUser').addEventListener('change',()=>{
-  const det=detectSite(document.getElementById('ccUser').value);
-  if(det.site)document.getElementById('ccSite').value=det.site; // pasted link picks the site
-  populateMonths();
-});
+document.getElementById('ccUserCc').addEventListener('change',populateMonths);
 async function populateMonths(){
-  const det=detectSite(document.getElementById('ccUser').value);
+  const det=detectSite(document.getElementById('ccUserCc').value);
   const sel=document.getElementById('ccMonth');
   sel.innerHTML='<option value="">latest</option>';
-  const site=det.site||document.getElementById('ccSite').value;
-  if(!det.user||site==='lichess')return; // months are a chess.com concept
+  if(!det.user||det.site==='lichess')return;
   try{
     const data=await ccApi(`https://api.chess.com/pub/player/${det.user}/games/archives`);
-    // archives are URLs ending /YYYY/MM, newest last
     [...data.archives].reverse().slice(0,24).forEach(u=>{
       const mm=u.match(/(\d{4})\/(\d{2})$/);
       if(mm){const o=document.createElement('option');o.value=u;o.textContent=`${mm[1]}-${mm[2]}`;sel.appendChild(o);}
@@ -1279,54 +1278,47 @@ async function populateMonths(){
   }catch(e){/* silent; fetch button will report */}
 }
 document.getElementById('ccFetch').onclick=async()=>{
-  const det=detectSite(document.getElementById('ccUser').value);
-  const user=det.user;
-  let site=det.site||document.getElementById('ccSite').value;
-  if(user){try{localStorage.setItem('cc_user',document.getElementById('ccUser').value.trim());}catch(e){}}
-  const st=document.getElementById('ccStatus');const list=document.getElementById('ccList');
+  const ccRaw=document.getElementById('ccUserCc').value.trim();
+  const liRaw=document.getElementById('ccUserLi').value.trim();
+  try{ localStorage.setItem('cc_user_cc',ccRaw); localStorage.setItem('cc_user_li',liRaw); }catch(e){}
+  const st=document.getElementById('ccStatus'), list=document.getElementById('ccList');
   list.innerHTML='';
-  if(!user){st.textContent='Enter a username or profile link.';return;}
-  st.textContent=`Fetching ${site==='lichess'?'Lichess':'Chess.com'} games for "${user}"…`;
-  try{
-    ccGames = site==='lichess' ? await fetchLichess(user) : await fetchChessCom(user);
-    if(!ccGames.length && site==='chesscom' && !det.site){ // plain username: maybe it's a lichess account
-      try{ const alt=await fetchLichess(user);
-        if(alt.length){ccGames=alt;site='lichess';document.getElementById('ccSite').value='lichess';} }catch(e2){}
-    }
-    if(!ccGames.length){st.textContent='No games found for this user.';return;}
-    renderCcList(user,st,list);
-  }catch(e){
-    if(site==='chesscom' && !det.site){ // chess.com 404 on a plain username → try lichess
-      try{
-        const alt=await fetchLichess(user);
-        if(alt.length){ccGames=alt;document.getElementById('ccSite').value='lichess';renderCcList(user,st,list);return;}
-      }catch(e2){}
-    }
-    st.textContent=`Could not load games (${e.message}). Check the username — the profile must be public.`;
-  }
+  // build fetch tasks; a pasted link overrides which box it's in
+  const tasks=[];
+  if(ccRaw){ const d=detectSite(ccRaw); tasks.push({user:d.user, site:d.site||'chesscom'}); }
+  if(liRaw){ const d=detectSite(liRaw); tasks.push({user:d.user, site:d.site||'lichess'}); }
+  if(!tasks.length){ st.textContent='Enter a Chess.com and/or Lichess username.'; return; }
+  st.textContent='Fetching games…';
+  const results=await Promise.all(tasks.map(async t=>{
+    try{ const games = t.site==='lichess'? await fetchLichess(t.user) : await fetchChessCom(t.user);
+      return {ok:true, site:t.site, user:t.user, games}; }
+    catch(e){ return {ok:false, site:t.site, user:t.user, err:e.message, games:[]}; }
+  }));
+  ccGames = results.flatMap(r=>r.games).sort((a,b)=>b._ts-a._ts); // merged, newest first
+  const nm=s=>s==='lichess'?'Lichess':'Chess.com';
+  const parts=results.map(r=> r.ok?`${r.games.length} from ${nm(r.site)}`:`${nm(r.site)} failed (${r.err})`);
+  if(!ccGames.length){ st.textContent='No games found. '+parts.join(' · '); return; }
+  st.textContent=`${ccGames.length} games · ${parts.join(' · ')} — click one.`;
+  renderCcList(st,list);
 };
-function renderCcList(user,st,list){
-  st.textContent=`${ccGames.length} games — click one to analyze.`;
+function renderCcList(st,list){
+  const srcTag=s=>`<span class="src src-${s==='lichess'?'li':'cc'}">${s==='lichess'?'Li':'CC'}</span>`;
   list.innerHTML=ccGames.map((g,i)=>{
-      const w=g.white||{},b=g.black||{};
+      const w=g.white||{},b=g.black||{}, me=g._me;
       const res=w.result==='win'?'1-0':b.result==='win'?'0-1':'½-½';
-      const tc=g.time_class||'';
-      const youAreWhite=w.username&&w.username.toLowerCase()===user;
+      const youAreWhite=w.username&&w.username.toLowerCase()===me;
       const yourRes=youAreWhite?w.result:b.result;
-      // outcome from the searched user's perspective
       const outcome=res==='½-½'?'D':(yourRes==='win'?'W':'L');
       const tag=outcome==='W'?'best':outcome==='L'?'blunder':'inacc';
-      // score shown from YOUR perspective (your points first), so it matches the badge
       const yourScore=outcome==='D'?'½-½':outcome==='W'?'1-0':'0-1';
       const wn=w.username||'?',bn=b.username||'?';
-      // bold + arrow marks which side is you
       const youMark=' <span class="num">(you)</span>';
       const wLabel=youAreWhite?`<b>${esc(wn)}</b>${youMark}`:esc(wn);
       const bLabel=!youAreWhite?`<b>${esc(bn)}</b>${youMark}`:esc(bn);
       return `<div class="ccgame" data-i="${i}" style="padding:6px 8px;border-radius:6px;cursor:pointer">
-        <span class="tag ${tag}">${outcome}</span>
+        ${srcTag(g._source)} <span class="tag ${tag}">${outcome}</span>
         ${wLabel} (${w.rating||'?'}) vs ${bLabel} (${b.rating||'?'})
-        <span class="num">${yourScore} · ${tc}</span></div>`;
+        <span class="num">${yourScore} · ${g.time_class||''}</span></div>`;
     }).join('');
     list.querySelectorAll('.ccgame').forEach(el=>{
       el.onmouseenter=()=>el.style.background='var(--panel2)';
@@ -1334,8 +1326,7 @@ function renderCcList(user,st,list){
       el.onclick=()=>{
         const g=ccGames[+el.dataset.i];
         if(loadGameFromPgn(g.pgn)){
-          // flip board if the searched user played black
-          const blackIsUser=(g.black&&g.black.username&&g.black.username.toLowerCase()===user);
+          const blackIsUser=(g.black&&g.black.username&&g.black.username.toLowerCase()===g._me);
           if(blackIsUser!==flipped){flipped=blackIsUser;render();paintEvalBar();}
           st.textContent='Loaded — analyzing…';
           switchTab('review');
@@ -1910,8 +1901,11 @@ document.getElementById('showArrow').addEventListener('change',e=>{
 
 /* ---------- boot ---------- */
 try{
-  const saved=localStorage.getItem('cc_user');
-  if(saved){document.getElementById('ccUser').value=saved;populateMonths();}
+  const cc=localStorage.getItem('cc_user_cc')||localStorage.getItem('cc_user')||'';
+  const li=localStorage.getItem('cc_user_li')||'';
+  if(cc)document.getElementById('ccUserCc').value=cc;
+  if(li)document.getElementById('ccUserLi').value=li;
+  if(cc)populateMonths();
 }catch(e){}
 render();
 rebuildMoveList();
