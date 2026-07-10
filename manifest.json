@@ -1,0 +1,17 @@
+{
+  "name": "Clown Analyzer",
+  "short_name": "Clown",
+  "description": "Free chess game review — accuracy, blunders, eval graph and a Clown report card. Import from Chess.com or Lichess.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0f1a",
+  "theme_color": "#0d0f1a",
+  "categories": ["games", "sports", "education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

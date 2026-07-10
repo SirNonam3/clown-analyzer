@@ -2,12 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clown Analyzer — free chess game review</title>
 <meta name="description" content="Free chess game analysis — accuracy, blunders, eval graph and a Clown report card. Import from Chess.com or paste any PGN.">
 <meta property="og:title" content="Clown Analyzer — free chess game review">
 <meta property="og:description" content="How many Clown moves 🤡 did you play? Analyze any chess game free — accuracy, estimated Elo, key moments.">
 <meta property="og:type" content="website">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clown Analyzer">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root{
     --bg:#1e1f22; --panel:#26282c; --panel2:#2f3237; --text:#e8e8e8; --muted:#9aa0a6;
@@ -337,7 +345,7 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
   · Game data via Chess.com &amp; Lichess public APIs
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="chess.min.js"></script>
 <script>
 /* ---------- Engine (Stockfish via cross-origin worker) ---------- */
 let engine=null, engineReady=false;
@@ -1912,6 +1920,11 @@ rebuildMoveList();
 initSounds();
 initEngine();
 setTimeout(()=>{ if(engineReady)triggerAnalysis(); else setTimeout(triggerAnalysis,1500); },800);
+
+/* register the service worker (offline app shell) — http/https only, not file:// */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
