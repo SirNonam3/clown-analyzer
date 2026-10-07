@@ -920,7 +920,7 @@ function tryMove(from,to,noAnim){
   const prevJ=(lastLiveJudge&&lastLiveJudge.fenAfter===fenBefore)?lastLiveJudge:null;
   if(made.san.includes('#')){ // mate delivered: no need to wait for the engine
     const sac=isSacrifice(game.fen(),made.color,made.to,capVal);
-    const competitive=matLead<3 && (!prevJ || winPct((moverW?1:-1)*prevJ.beforeEvW)<=75);
+    const competitive=matLead<3;
     setTimeout(()=>showJudge(made.san,made.to,(sac&&competitive)?'brilliant':'best'),0);
   } else if(snap&&snap.best&&!game.game_over()){
     pendingJudge={fenAfter:game.fen(), beforeEvW:snap.evW, best:snap.best, secondEvW:snap.secondEvW,
@@ -1813,12 +1813,13 @@ function classify(d){
 
   // BRILLIANT (!!) — a strong sacrifice of a piece or the exchange (rook for a minor piece):
   //  • strong: the engine's best move (or practically as good) and it works — mate or a clear edge
-  //  • only in competitive positions: not when already a lot of material up, and not when
-  //    already clearly winning before the opponent's last move
+  //  • only in competitive positions, judged by material (like chess.com): not when you've already
+  //    won a lot of material. A crushing attack while material is level/behind still counts —
+  //    e.g. Morphy's 16.Qb8+!! in the Opera Game.
   //  • endgame: must be the ONLY good move; opening/middlegame: may be one of several good moves
   if(d.sac && !d.isBook && (d.isBest||wl<=2)){
     const works      = d.evalAfterMover>=100;             // forced mate (≥90000) or at least a clear edge
-    const competitive= d.matLead<3 && (d.evalPrevMover==null || winPct(d.evalPrevMover)<=75);
+    const competitive= d.matLead<3;
     const uniqueOK   = !d.endgame || d.gapWl>=10;
     if(works && competitive && uniqueOK) return 'brilliant';
   }
