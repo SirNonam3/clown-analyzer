@@ -307,7 +307,12 @@ details.more[open] summary{margin-bottom:8px}
         </select>
       </label>
       <label class="small"><input type="checkbox" id="autoAnalyze" checked> Auto-analyze</label>
-      <label class="small"><input type="checkbox" id="showArrow" checked> Engine arrows (top 3)</label>
+      <label class="small" title="How many engine moves to draw. Clearly weaker moves are never drawn, so you may see fewer.">Arrows
+        <select id="arrowCount">
+          <option value="0">Off</option><option value="1">1 (best)</option><option value="2">2</option>
+          <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+        </select>
+      </label>
     </div>
 
     <div class="nav">
@@ -335,7 +340,7 @@ details.more[open] summary{margin-bottom:8px}
       <input type="text" id="ccUserLi" placeholder="thibault, another_account">
       <p class="small" style="margin:6px 0 0">Separate several accounts with commas. Fill either or both — all games are merged, newest first. Profile links work too.</p>
       <div class="row" style="margin-top:8px">
-        <label class="small">Chess.com month
+        <label class="small">Month
           <select id="ccMonth"><option value="">latest</option></select>
         </label>
         <button class="btn" id="ccFetch">Fetch games</button>
@@ -473,7 +478,7 @@ function initEngine(){
     setStatus('Engine error — reloading…'); recoverEngine();
   };
   engine.postMessage('uci');
-  engine.postMessage('setoption name MultiPV value 3'); // top-3 lines for the arrow display
+  engineMultiPV=0; // fresh engine: pump() sets MultiPV before the first search
   engine.postMessage('isready');
 }
 function recoverEngine(){
@@ -657,10 +662,16 @@ function analyze(fen,depth,onInfo,onDone){
   engineQueue.push({fen,depth,onInfo,onDone});
   if(current){engine.postMessage('stop');} else pump();
 }
+/* Live-engine lines: as many as the arrow setting wants, but at least 2 (move judging needs the 2nd best). */
+let engineMultiPV=0;
+function arrowsWanted(){ const el=document.getElementById('arrowCount'); return el?+el.value:3; }
+function wantedMultiPV(){ return Math.max(2, arrowsWanted()); }
 function pump(){
   if(!engineReady||current||!engineQueue.length)return;
   current=engineQueue.shift();
   current.lastByPv={};
+  const mpv=wantedMultiPV(); // engine is idle here, so changing options is safe
+  if(mpv!==engineMultiPV){ engine.postMessage('setoption name MultiPV value '+mpv); engineMultiPV=mpv; }
   engine.postMessage('position fen '+current.fen);
   engine.postMessage('go depth '+current.depth);
   armWatchdog();
@@ -1022,15 +1033,16 @@ function triggerAnalysis(){
         best:(byPv[1]&&byPv[1].pv)?byPv[1].pv[0]:null,
         secondEvW:byPv[2]?toW(sv(byPv[2])):null};
     }
-    if(byPv && document.getElementById('showArrow').checked){
-      // alternatives only earn an arrow if they're close to the best move:
-      // gap <=3 win% -> clearly playable (0.5), <=8 -> okay-ish (0.3), worse -> hidden
+    const nArrows=arrowsWanted();
+    if(byPv && nArrows>0){
+      // best move solid; alternatives (up to the chosen count) only if they're close to it:
+      // gap <=3 win% -> clearly playable (0.5), <=8 -> okay-ish (0.3), worse -> not drawn
       const val=p=>p.mate!==undefined?(p.mate>0?100000:-100000):(p.cp||0);
       const arrows=[];
       if(byPv[1]&&byPv[1].pv){
         arrows.push({uci:byPv[1].pv[0],o:0.85,w:0.18});
         const w1=winPct(val(byPv[1]));
-        for(const k of [2,3]){
+        for(let k=2;k<=nArrows;k++){
           const p=byPv[k]; if(!p||!p.pv)continue;
           const gap=w1-winPct(val(p));
           if(gap<=3)      arrows.push({uci:p.pv[0],o:0.5,w:0.14});
@@ -1243,7 +1255,7 @@ let lastArrows=null;
 /* Draw arrows given [{uci, o (opacity), w (width)}]. The marker fill is solid and the
    line element's group opacity covers body + head together, so they always match. */
 function drawArrows(list){
-  const clean=(list||[]).filter(a=>a&&a.uci&&a.uci.length>=4).slice(0,3);
+  const clean=(list||[]).filter(a=>a&&a.uci&&a.uci.length>=4).slice(0,5);
   if(!clean.length){clearArrow();return;}
   lastArrows=clean;
   let defs='<defs>', lines=[];
@@ -1318,7 +1330,7 @@ document.getElementById('returnGame').onclick=()=>{
 };
 document.getElementById('navFlip').onclick=()=>{
   flipped=!flipped;render();paintEvalBar();
-  if(lastArrows&&document.getElementById('showArrow').checked)drawArrows(lastArrows);
+  if(lastArrows&&arrowsWanted()>0)drawArrows(lastArrows);
 };
 
 /* ---------- Tabs ---------- */
@@ -1410,9 +1422,16 @@ async function fetchChessCom(user){
   return (data.games||[]).filter(g=>g.pgn)
     .map(g=>Object.assign(g,{_source:'chesscom',_me:user,_ts:(g.end_time||0)*1000,_id:g.url||g.uuid}));
 }
-/* Lichess: ND-JSON stream of the user's last games, mapped to the chess.com shape. */
+/* Lichess: ND-JSON stream of the user's games, mapped to the chess.com shape.
+   No month → the last 30 games; a month ('YYYY/MM') → that month's games (up to 300). */
 async function fetchLichess(user){
-  const r=await fetch(`https://lichess.org/api/games/user/${user}?max=30&pgnInJson=true&opening=true`,
+  const month=document.getElementById('ccMonth').value;
+  let q='max=30';
+  if(month){
+    const [y,m]=month.split('/').map(Number);
+    q=`max=300&since=${Date.UTC(y,m-1,1)}&until=${Date.UTC(y,m,1)}`; // Date.UTC rolls month 12 → next January
+  }
+  const r=await fetch(`https://lichess.org/api/games/user/${encodeURIComponent(user)}?${q}&pgnInJson=true&opening=true`,
     {headers:{'Accept':'application/x-ndjson'}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const text=await r.text();
@@ -1429,13 +1448,23 @@ async function fetchLichess(user){
   }).filter(g=>g.pgn);
 }
 document.getElementById('ccUserCc').addEventListener('change',populateMonths);
-/* Months available on ANY of the Chess.com accounts (values are 'YYYY/MM'). */
+document.getElementById('ccUserLi').addEventListener('change',populateMonths);
+/* Month choices (values 'YYYY/MM'): months with games on any Chess.com account, plus the last
+   24 calendar months when a Lichess account is entered (Lichess has no list of months). */
 async function populateMonths(){
   const sel=document.getElementById('ccMonth'), keep=sel.value;
-  const accounts=parseAccounts(document.getElementById('ccUserCc').value,'chesscom').filter(a=>a.site==='chesscom');
+  const all=[...parseAccounts(document.getElementById('ccUserCc').value,'chesscom'),
+             ...parseAccounts(document.getElementById('ccUserLi').value,'lichess')];
+  const accounts=all.filter(a=>a.site==='chesscom');
   sel.innerHTML='<option value="">latest</option>';
-  if(!accounts.length)return;
   const months=new Set();
+  if(all.some(a=>a.site==='lichess')){
+    const d=new Date();
+    for(let k=0;k<24;k++){
+      const t=new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()-k, 1));
+      months.add(t.getUTCFullYear()+'/'+String(t.getUTCMonth()+1).padStart(2,'0'));
+    }
+  }
   await Promise.all(accounts.map(async a=>{
     try{
       const data=await ccApi(`https://api.chess.com/pub/player/${a.user}/games/archives`);
@@ -2239,10 +2268,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='f')document.getElementById('navFlip').click();
 });
 
-/* arrows checkbox: hide/show immediately without waiting for the next analysis */
-document.getElementById('showArrow').addEventListener('change',e=>{
-  if(!e.target.checked){const keep=lastArrows;svg.innerHTML='';lastArrows=keep;}
-  else if(lastArrows)drawArrows(lastArrows);
+/* arrow count: remembered per device; changing it re-analyses with the matching number of lines */
+try{ const saved=localStorage.getItem('arrowCount'); if(saved!==null&&/^[0-5]$/.test(saved))document.getElementById('arrowCount').value=saved; }catch(e){}
+document.getElementById('arrowCount').addEventListener('change',e=>{
+  try{ localStorage.setItem('arrowCount',e.target.value); }catch(err){}
+  clearArrow();
+  if(!(puzzleMode&&!puzzleMode.solved)) triggerAnalysis();
 });
 
 /* ---------- boot ---------- */
@@ -2251,7 +2282,7 @@ try{
   const li=localStorage.getItem('cc_user_li')||'';
   if(cc)document.getElementById('ccUserCc').value=cc;
   if(li)document.getElementById('ccUserLi').value=li;
-  if(cc)populateMonths();
+  if(cc||li)populateMonths();
 }catch(e){}
 render();
 rebuildMoveList();
