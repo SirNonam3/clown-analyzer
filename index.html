@@ -1002,6 +1002,7 @@ function tryMove(from,to,noAnim){
   const mv=game.moves({square:from,verbose:true}).find(m=>m.to===to);
   if(!mv)return false;
   if(puzzleMode&&!puzzleMode.solved) return puzzleTry(mv,noAnim); // puzzle rules apply
+  if(puzzleMode) puzzleMode.view=null; // solved: exploring from the viewed position starts a new line
   // first own move while a game is loaded = leaving the game line; remember where
   if(fullHistory && excursionPly===null) excursionPly=ply;
   // snapshot the current position's analysis before the move changes it
@@ -1376,7 +1377,8 @@ function startPuzzle(opts){
   if(!puzzleMode||!puzzleReturn) puzzleReturn={had:!!fullHistory, ply}; // keep the way back across "next puzzle"
   puzzleMode={solution:opts.solution.slice(), idx:0, solverWhite:opts.solverWhite, solved:false,
     rated:!!opts.rated, id:opts.id||null, rating:opts.rating||null, themes:opts.themes||[], title:opts.title||'Puzzle',
-    rateDone:false, delta:0, failed:false, hints:0, startFen:null, busy:false};
+    rateDone:false, delta:0, failed:false, hints:0, startFen:null, busy:false, animating:false,
+    baseFen:opts.fenPrev&&(opts.introUci||opts.introSan)?opts.fenPrev:opts.fen, line:null, view:null};
   const pm=puzzleMode;
   loadedMode=false; selected=null; pzBadge=null; clearJudge(); clearArrow();
   flipped=!opts.solverWhite; paintEvalBar(); // solver plays from the bottom
@@ -1396,6 +1398,26 @@ function startPuzzle(opts){
       render(); if(mv){sfxFor(mv);animateMoveObj(mv,false);} go(); },600);
   } else { game.load(opts.fen); render(); go(); }
 }
+// ⏮ ◀ ▶ ⏭ inside a puzzle: step through its moves (the opponent's last move, yours, the replies — and,
+// once solved, anything you explored). While unsolved you can look back; moves are made at the live position.
+function pzNav(to){ // 'start' | 'prev' | 'next' | 'end'
+  const pm=puzzleMode; if(!pm||!pm.startFen||pm.busy||pm.animating)return;
+  if(pm.view==null){ pm.line=game.history({verbose:true}); pm.view=pm.line.length; }
+  const n=pm.line.length;
+  const target=to==='start'?0:to==='end'?n:to==='prev'?pm.view-1:pm.view+1;
+  if(target<0||target>n||target===pm.view)return;
+  const from=pm.view;
+  game.load(pm.baseFen); for(let k=0;k<target;k++) game.move(pm.line[k]);
+  pm.view=target===n?null:target;
+  selected=null; clearArrow(); render();
+  if(Math.abs(target-from)===1){ // single step: slide the piece like in a game review
+    const fwd=target>from, mv=pm.line[fwd?target-1:target];
+    if(fwd)sfxFor(mv); else sfx('move');
+    animateMoveObj(mv,!fwd);
+  }
+  if(pm.solved) triggerAnalysis();
+}
+function pzToLive(){ if(puzzleMode&&puzzleMode.view!=null)pzNav('end'); }
 function pzRateOnce(win){ // a rated puzzle changes your rating once: on the first miss, hint or solution — or when solved
   const pm=puzzleMode;
   if(!pm||!pm.rated||pm.rateDone)return;
@@ -1403,6 +1425,7 @@ function pzRateOnce(win){ // a rated puzzle changes your rating once: on the fir
 }
 function puzzleTry(mv,noAnim){
   if(!puzzleMode.startFen||puzzleMode.busy)return true; // opponent's move / ✗ take-back still playing
+  if(puzzleMode.view!=null){ pzToLive(); return true; } // looking at an earlier move → back to the puzzle first
   clearArrow();
   let promo;
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
@@ -1503,6 +1526,7 @@ function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
 }
 document.getElementById('pzHint').onclick=()=>{
   if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen||puzzleMode.busy)return;
+  pzToLive();
   const want=puzzleMode.solution[puzzleMode.idx]; if(!want)return;
   puzzleMode.hints++; pzRateOnce(false);
   if(puzzleMode.hints===1){ // 1st hint: which piece · 2nd: the move itself
@@ -1513,15 +1537,16 @@ document.getElementById('pzHint').onclick=()=>{
 };
 document.getElementById('pzSolution').onclick=()=>{
   if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen||puzzleMode.busy)return;
-  pzRateOnce(false);
-  const pm=puzzleMode; pm.solved=true; pzBadge=null;
+  pzToLive(); pzRateOnce(false);
+  const pm=puzzleMode; pm.solved=true; pm.animating=true; pzBadge=null;
   const rest=pm.solution.slice(pm.idx);
   let t=0;
   rest.forEach(u=>{ t+=620; setTimeout(()=>{ if(puzzleMode!==pm)return;
     const m=game.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||'q'});
     if(m){sfxFor(m);render();animateMoveObj(m,false);}
   },t); });
-  setTimeout(()=>{ if(puzzleMode!==pm)return; pzStatus('Solution shown — study it on the board, then try the next one.');
+  setTimeout(()=>{ if(puzzleMode!==pm)return; pm.animating=false;
+    pzStatus('Solution shown — step through it with ◀ ▶, then try the next one.');
     pzShowResult('shown'); triggerAnalysis(); },t+400);
 };
 document.getElementById('pzExit').onclick=()=>{
@@ -1677,14 +1702,14 @@ function gotoPly(n){
 let fullHistory=null, startFen=null;
 
 /* ---------- Navigation buttons ---------- */
-document.getElementById('navStart').onclick=()=>{ if(puzzleMode)return; if(fullHistory)gotoPly(0); };
-document.getElementById('navEnd').onclick=()=>{ if(puzzleMode)return; if(fullHistory)gotoPly(fullHistory.length); };
+document.getElementById('navStart').onclick=()=>{ if(puzzleMode)return pzNav('start'); if(fullHistory)gotoPly(0); };
+document.getElementById('navEnd').onclick=()=>{ if(puzzleMode)return pzNav('end'); if(fullHistory)gotoPly(fullHistory.length); };
 document.getElementById('navPrev').onclick=()=>{
-  if(puzzleMode)return;
+  if(puzzleMode)return pzNav('prev');
   if(fullHistory && excursionPly===null){ if(ply>0)gotoPly(ply-1); }
   else { const und=game.undo(); selected=null; clearJudge(); sfx('move'); afterMove(); if(und)animateMoveObj(und,true); }
 };
-document.getElementById('navNext').onclick=()=>{ if(puzzleMode)return; if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
+document.getElementById('navNext').onclick=()=>{ if(puzzleMode)return pzNav('next'); if(fullHistory&&excursionPly===null&&ply<fullHistory.length)gotoPly(ply+1); };
 document.getElementById('returnGame').onclick=()=>{
   if(puzzleMode)return;
   if(!fullHistory)return;
@@ -2757,7 +2782,7 @@ document.getElementById('histClear').onclick=()=>{
 /* mouse wheel over the board: wheel up = next move, wheel down = previous */
 let wheelAcc=0;
 document.querySelector('.boardbox').addEventListener('wheel',e=>{
-  if(!fullHistory||puzzleMode)return; // only while a game is loaded (and not solving a puzzle)
+  if(!fullHistory&&!puzzleMode)return; // only while a game or a puzzle is on the board
   e.preventDefault();
   if(wheelAcc!==0 && Math.sign(e.deltaY)!==Math.sign(wheelAcc)) wheelAcc=0; // direction change resets
   wheelAcc+=e.deltaY;
