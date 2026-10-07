@@ -310,6 +310,8 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .pz-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .pz-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--muted)}
 .pz-more{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.movebadge.pz-pop{animation:pzPop .3s .12s cubic-bezier(.2,.9,.3,1.4) both} /* waits for the piece to land */
+@keyframes pzPop{0%{transform:scale(0)}100%{transform:scale(1)}}
 /* premium */
 .donate.premium{border:none;cursor:pointer;font-family:inherit}
 .modal{position:fixed;inset:0;z-index:200;background:rgba(5,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
@@ -892,7 +894,10 @@ function boardBadge(cell,meta){
   b.style.top=Math.round(-bs*0.18)+'px';
   b.style.right=Math.round(-bs*0.18)+'px';
   cell.appendChild(b);
+  return b;
 }
+let pzBadge=null; // {sq, ok, fresh} ✓ / ✗ on the square of the move just tried in a puzzle
+const PZ_BADGE={ok:{color:'#22a35a',icon:'✓',label:'Correct'}, bad:{color:'#e5484d',icon:'✗',label:'Not the move'}};
 function render(){
   boardEl.innerHTML='';
   const board=game.board(); // [rank8..rank1][file a..h]
@@ -941,6 +946,12 @@ function render(){
     const meta=CATS[liveBadge.cat];
     const cell=boardEl.querySelector(`[data-sq="${liveBadge.sq}"]`);
     if(meta && cell) boardBadge(cell,meta);
+  }
+  // puzzle ✓ / ✗ — only while that move is still the last one on the board
+  if(pzBadge && puzzleMode && last && last.to===pzBadge.sq){
+    const cell=boardEl.querySelector(`[data-sq="${pzBadge.sq}"]`);
+    if(cell){ const b=boardBadge(cell,pzBadge.ok?PZ_BADGE.ok:PZ_BADGE.bad);
+      if(pzBadge.fresh){ b.classList.add('pz-pop'); pzBadge.fresh=false; } }
   }
   // "Return to game" appears only while trying own moves off a loaded game
   const rg=document.getElementById('returnGame');
@@ -1365,9 +1376,9 @@ function startPuzzle(opts){
   if(!puzzleMode||!puzzleReturn) puzzleReturn={had:!!fullHistory, ply}; // keep the way back across "next puzzle"
   puzzleMode={solution:opts.solution.slice(), idx:0, solverWhite:opts.solverWhite, solved:false,
     rated:!!opts.rated, id:opts.id||null, rating:opts.rating||null, themes:opts.themes||[], title:opts.title||'Puzzle',
-    rateDone:false, delta:0, failed:false, hints:0, startFen:null};
+    rateDone:false, delta:0, failed:false, hints:0, startFen:null, busy:false};
   const pm=puzzleMode;
-  loadedMode=false; selected=null; clearJudge(); clearArrow();
+  loadedMode=false; selected=null; pzBadge=null; clearJudge(); clearArrow();
   flipped=!opts.solverWhite; paintEvalBar(); // solver plays from the bottom
   document.getElementById('pzControls').style.display='flex';
   document.getElementById('pzHint').style.display=document.getElementById('pzSolution').style.display='';
@@ -1391,7 +1402,7 @@ function pzRateOnce(win){ // a rated puzzle changes your rating once: on the fir
   pm.rateDone=true; pm.delta=pzRate(win,pm.rating||1500);
 }
 function puzzleTry(mv,noAnim){
-  if(!puzzleMode.startFen)return true; // still showing the opponent's move
+  if(!puzzleMode.startFen||puzzleMode.busy)return true; // opponent's move / ✗ take-back still playing
   clearArrow();
   let promo;
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
@@ -1402,30 +1413,40 @@ function puzzleTry(mv,noAnim){
     const t=new Chess(game.fen()); const tm=t.move({from:mv.from,to:mv.to,promotion:promo||'q'});
     if(tm&&t.in_checkmate()){ ok=true; altMate=true; }
   }
-  if(!ok){
-    selected=null; render();
-    const cell=boardEl.querySelector(`[data-sq="${mv.to}"]`);
-    if(cell){cell.classList.add('wrong'); setTimeout(()=>cell.classList.remove('wrong'),380);}
-    const first=!puzzleMode.failed; puzzleMode.failed=true; pzRateOnce(false);
-    const d=puzzleMode.delta;
-    pzStatus('✗ Not the move'+(first&&puzzleMode.rated&&d?` (${d} rating)`:'')+' — try again, or show the solution.');
+  const pm=puzzleMode;
+  if(!ok){ // play it with a ✗, then take it back
+    selected=null; pm.busy=true;
+    const tmp=game.move({from:mv.from,to:mv.to,promotion:promo||'q'});
+    pzBadge={sq:mv.to, ok:false, fresh:true};
+    render(); if(tmp){ sfxFor(tmp); if(!noAnim)animateMoveObj(tmp,false); }
+    const first=!pm.failed; pm.failed=true; pzRateOnce(false);
+    const d=pm.delta;
+    pzStatus('✗ Not the move'+(first&&pm.rated&&d?` (${d} rating)`:'')+' — try again, or show the solution.');
     if(window.NativeBridge)NativeBridge.haptic('error');
+    setTimeout(()=>{
+      if(puzzleMode!==pm)return;
+      const back=tmp?game.undo():null; pzBadge=null; render();
+      if(back)animateMoveObj(back,true);
+      pm.busy=false;
+    },750);
     return true;
   }
   const made=game.move({from:mv.from,to:mv.to,promotion:promo||'q'});
-  sfxFor(made); selected=null; puzzleMode.idx++;
+  pzBadge={sq:mv.to, ok:true, fresh:true};
+  sfxFor(made); selected=null; pm.idx++;
   render(); if(!noAnim)animateMoveObj(made,false);
-  if(altMate||puzzleMode.idx>=puzzleMode.solution.length){ puzzleSolved(); return true; }
+  if(altMate||pm.idx>=pm.solution.length){ puzzleSolved(); return true; }
   pzStatus('✓ Correct — keep going!');
-  const pm=puzzleMode;
+  pm.busy=true;
   setTimeout(()=>{ // opponent's forced reply
     if(puzzleMode!==pm)return;
     const r=pm.solution[pm.idx++];
     const rm=game.move({from:r.slice(0,2),to:r.slice(2,4),promotion:r.slice(4)||'q'});
+    pzBadge=null; pm.busy=false;
     if(rm){ sfxFor(rm); render(); animateMoveObj(rm,false); }
     if(pm.idx>=pm.solution.length) puzzleSolved();
     else pzStatus(pzSideText()+' — continue!');
-  },520);
+  },650);
   return true;
 }
 function puzzleSolved(){
@@ -1481,7 +1502,7 @@ function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
   document.getElementById('pzHint').style.display=document.getElementById('pzSolution').style.display='none';
 }
 document.getElementById('pzHint').onclick=()=>{
-  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen)return;
+  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen||puzzleMode.busy)return;
   const want=puzzleMode.solution[puzzleMode.idx]; if(!want)return;
   puzzleMode.hints++; pzRateOnce(false);
   if(puzzleMode.hints===1){ // 1st hint: which piece · 2nd: the move itself
@@ -1491,9 +1512,9 @@ document.getElementById('pzHint').onclick=()=>{
   } else { drawArrow(want); pzStatus('💡 Play the arrow move.'); }
 };
 document.getElementById('pzSolution').onclick=()=>{
-  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen)return;
+  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen||puzzleMode.busy)return;
   pzRateOnce(false);
-  const pm=puzzleMode; pm.solved=true;
+  const pm=puzzleMode; pm.solved=true; pzBadge=null;
   const rest=pm.solution.slice(pm.idx);
   let t=0;
   rest.forEach(u=>{ t+=620; setTimeout(()=>{ if(puzzleMode!==pm)return;
@@ -1505,7 +1526,7 @@ document.getElementById('pzSolution').onclick=()=>{
 };
 document.getElementById('pzExit').onclick=()=>{
   if(!puzzleMode)return;
-  puzzleMode=null;
+  puzzleMode=null; pzBadge=null;
   document.getElementById('pzControls').style.display='none';
   document.getElementById('pzResult').innerHTML='';
   const nb=document.getElementById('pzNext'); nb.textContent='▶ Start puzzles'; nb.style.display='';
