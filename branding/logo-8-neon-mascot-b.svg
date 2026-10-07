@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Neon Mascot B: the whole clown pawn is neon (face included), neon pink-orange hair -->
+  <defs>
+    <linearGradient id="piece" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#c3b9ff"/><stop offset="0.5" stop-color="#8f84f6"/><stop offset="1" stop-color="#4fd1c5"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8fb1"/><stop offset="1" stop-color="#ff6a3d"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.48" r="0.6">
+      <stop offset="0" stop-color="#6d5ff0" stop-opacity="0.5"/><stop offset="1" stop-color="#6d5ff0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/>
+    </radialGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="#0f1124"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+  <g fill="#8b7cf8" opacity="0.55" filter="url(#blur)">
+    <circle cx="256" cy="170" r="70"/>
+    <path d="M206 236 L306 236 L298 262 C298 308 322 336 346 360 L380 380 L380 412 L132 412 L132 380 L166 360 C190 336 214 308 214 262 Z"/>
+  </g>
+  <g fill="url(#hair)">
+    <circle cx="190" cy="142" r="24"/><circle cx="178" cy="172" r="21"/><circle cx="192" cy="198" r="17"/>
+    <circle cx="322" cy="142" r="24"/><circle cx="334" cy="172" r="21"/><circle cx="320" cy="198" r="17"/>
+  </g>
+  <g fill="url(#piece)">
+    <circle cx="256" cy="170" r="66"/>
+    <rect x="186" y="236" width="140" height="28" rx="14"/>
+    <path d="M214 262 C214 308 190 336 166 360 L346 360 C322 336 298 308 298 262 Z"/>
+    <rect x="146" y="354" width="220" height="30" rx="12"/>
+    <rect x="128" y="378" width="256" height="34" rx="14"/>
+  </g>
+  <!-- glossy highlight on the head -->
+  <path d="M212 140 A54 54 0 0 1 272 110" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <g fill="none" stroke="#1b1638" stroke-width="7" stroke-linecap="round">
+    <path d="M224 160 Q234 148 244 160"/><path d="M268 160 Q278 148 288 160"/>
+  </g>
+  <path d="M222 204 Q256 236 290 204" fill="none" stroke="#ff3b5c" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="256" cy="186" r="20" fill="url(#nose)"/>
+  <circle cx="249" cy="179" r="6" fill="#fff" opacity="0.6"/>
+</svg>

@@ -11,7 +11,7 @@ const out = join(root, 'www');
 // app files (sw.js and the 1.5 MB asm.js engine are web/file:// only — not needed in the apps)
 const FILES = [
   'config.js', 'chess.min.js', 'openings.json', 'privacy.html', 'manifest.json',
-  'icon-192.png', 'icon-512.png',
+  'icon-192.png', 'icon-512.png', 'logo.svg',
   'stockfish-19-lite-single.js', 'stockfish-19-lite-single.wasm', // main engine (Stockfish 19 NNUE)
   'stockfish.wasm.js', 'stockfish.wasm'                           // fallback engine
 ];

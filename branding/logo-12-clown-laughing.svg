@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- F · Laughing clown: neon pawn, squeezed laughing eyes, open laughing mouth, wild rainbow hair -->
+  <defs>
+    <linearGradient id="piece" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#c3b9ff"/><stop offset="0.5" stop-color="#8f84f6"/><stop offset="1" stop-color="#4fd1c5"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.48" r="0.6">
+      <stop offset="0" stop-color="#6d5ff0" stop-opacity="0.5"/><stop offset="1" stop-color="#6d5ff0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/>
+    </radialGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="#0f1124"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+  <g fill="#8b7cf8" opacity="0.55" filter="url(#blur)">
+    <circle cx="256" cy="172" r="74"/>
+    <path d="M200 240 L312 240 L298 266 C298 310 322 338 346 360 L380 380 L380 412 L132 412 L132 380 L166 360 C190 338 214 310 214 266 Z"/>
+  </g>
+  <!-- wild rainbow hair -->
+  <circle cx="196" cy="116" r="20" fill="#ffd23f"/><circle cx="174" cy="140" r="24" fill="#ff5fa2"/>
+  <circle cx="160" cy="172" r="22" fill="#ff8a3d"/><circle cx="174" cy="202" r="18" fill="#ffd23f"/>
+  <circle cx="316" cy="116" r="20" fill="#ffd23f"/><circle cx="338" cy="140" r="24" fill="#ff5fa2"/>
+  <circle cx="352" cy="172" r="22" fill="#ff8a3d"/><circle cx="338" cy="202" r="18" fill="#ffd23f"/>
+  <!-- neon pawn -->
+  <g fill="url(#piece)">
+    <circle cx="256" cy="172" r="70"/>
+    <path d="M214 262 C214 308 190 336 166 360 L346 360 C322 336 298 308 298 262 Z"/>
+    <rect x="146" y="354" width="220" height="30" rx="12"/>
+    <rect x="128" y="378" width="256" height="34" rx="14"/>
+  </g>
+  <!-- ruffle collar -->
+  <ellipse cx="256" cy="252" rx="74" ry="14" fill="#4fd1c5"/>
+  <circle cx="194" cy="252" r="15" fill="#ff5fa2"/><circle cx="219" cy="256" r="15" fill="#ffd23f"/>
+  <circle cx="244" cy="258" r="15" fill="#ff5fa2"/><circle cx="268" cy="258" r="15" fill="#4fd1c5"/>
+  <circle cx="293" cy="256" r="15" fill="#ffd23f"/><circle cx="318" cy="252" r="15" fill="#ff5fa2"/>
+  <path d="M208 140 A58 58 0 0 1 268 108" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+  <!-- white muzzle -->
+  <ellipse cx="256" cy="214" rx="48" ry="32" fill="#fff"/>
+  <!-- squeezed laughing eyes  > < -->
+  <g fill="none" stroke="#1b1638" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M220 150 L240 160 L220 170"/><path d="M292 150 L272 160 L292 170"/>
+  </g>
+  <!-- rosy cheeks -->
+  <circle cx="206" cy="192" r="11" fill="#ff5fa2" opacity="0.6"/><circle cx="306" cy="192" r="11" fill="#ff5fa2" opacity="0.6"/>
+  <!-- open laughing mouth -->
+  <path d="M222 206 Q256 258 290 206 Z" fill="#7a0f2a" stroke="#e02f45" stroke-width="6" stroke-linejoin="round"/>
+  <ellipse cx="256" cy="228" rx="15" ry="8" fill="#ff7a95"/>
+  <!-- nose -->
+  <circle cx="256" cy="190" r="19" fill="url(#nose)"/>
+  <circle cx="249" cy="183" r="5.5" fill="#fff" opacity="0.65"/>
+</svg>

@@ -14,8 +14,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Clown Analyzer">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta property="og:image" content="https://sirnonam3.github.io/clown-analyzer/icon-512.png">
+<meta name="twitter:card" content="summary">
 <style>
   :root{
     --bg:#1e1f22; --panel:#26282c; --panel2:#2f3237; --text:#e8e8e8; --muted:#9aa0a6;
@@ -158,7 +161,8 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;
 header{position:sticky;top:0;z-index:50;background:rgba(13,15,26,.82);
   backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px 22px}
 header h1{font-weight:800;letter-spacing:.3px;font-size:19px}
-header h1 .logo-emoji{-webkit-text-fill-color:initial} /* emoji keeps its native colors */
+header h1{display:flex;align-items:center;gap:9px;margin:0}
+header h1 .logo-img{width:34px;height:34px;border-radius:9px;box-shadow:0 2px 10px #ff3b5c33;flex:0 0 auto}
 header h1 .logo-text{background:linear-gradient(90deg,#a99cff 0%,#4fd1c5 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
 header .status{background:var(--panel2);border:1px solid var(--border);color:var(--muted);
@@ -268,7 +272,7 @@ details.more[open] summary{margin-bottom:8px}
 </head>
 <body>
 <header>
-  <h1><span class="logo-emoji">🤡</span> <span class="logo-text">Clown Analyzer</span></h1>
+  <h1><img class="logo-img" src="logo.svg" alt="" width="34" height="34"> <span class="logo-text">Clown Analyzer</span></h1>
   <span class="status" id="engineStatus">Loading engine…</span>
   <a class="donate" id="supportLink" href="#" target="_blank" rel="noopener" title="Support the site" style="display:none">☕ Support</a>
   <button class="donate premium" id="premiumBtn" style="display:none">⭐ Go ad-free</button>
@@ -1718,6 +1722,7 @@ function catCounts(){
 }
 
 /* ---------- Share-as-image report card ---------- */
+const LOGO_IMG=new Image(); LOGO_IMG.src='logo.svg'; // preloaded for the card title
 function buildReportCard(){
   const W=720,H=920,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');
@@ -1731,7 +1736,13 @@ function buildReportCard(){
   const tg=x.createLinearGradient(W*0.2,0,W*0.8,0);tg.addColorStop(0,'#a99cff');tg.addColorStop(1,'#4fd1c5');
   x.textAlign='center';
   x.font='800 38px Inter,Segoe UI,sans-serif';x.fillStyle=tg;
-  x.fillText('🤡 CLOWN ANALYZER',W/2,66);
+  if(LOGO_IMG.complete && LOGO_IMG.naturalWidth){ // logo + title, centred together
+    const title='CLOWN ANALYZER', tw=x.measureText(title).width, L=54, gap=14, start=(W-(L+gap+tw))/2;
+    x.save(); x.beginPath();
+    if(x.roundRect) x.roundRect(start,30,L,L,13); else x.rect(start,30,L,L); // roundRect: iOS 16+
+    x.clip(); x.drawImage(LOGO_IMG,start,30,L,L); x.restore();
+    x.textAlign='left'; x.fillText(title,start+L+gap,70); x.textAlign='center';
+  } else x.fillText('🤡 CLOWN ANALYZER',W/2,66);
   x.font='600 14px Inter,Segoe UI,sans-serif';x.fillStyle='#9299b3';
   x.fillText('GAME REPORT',W/2,94);
   // players + opening

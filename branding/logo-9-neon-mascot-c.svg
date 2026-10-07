@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Neon Mascot C: the classic white clown, lit by a neon violet/teal rim glow on the dark board -->
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a99cff"/><stop offset="1" stop-color="#4fd1c5"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc24b"/><stop offset="1" stop-color="#ff7a3d"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.48" r="0.6">
+      <stop offset="0" stop-color="#6d5ff0" stop-opacity="0.45"/><stop offset="1" stop-color="#6d5ff0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/>
+    </radialGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="#0f1124"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+  <!-- neon rim: a slightly larger gradient silhouette, blurred + crisp -->
+  <g id="sil">
+    <circle cx="256" cy="170" r="66"/>
+    <rect x="186" y="236" width="140" height="28" rx="14"/>
+    <path d="M214 262 C214 308 190 336 166 360 L346 360 C322 336 298 308 298 262 Z"/>
+    <rect x="146" y="354" width="220" height="30" rx="12"/>
+    <rect x="128" y="378" width="256" height="34" rx="14"/>
+  </g>
+  <use href="#sil" fill="url(#rim)" stroke="url(#rim)" stroke-width="22" stroke-linejoin="round" filter="url(#blur)" opacity="0.9"/>
+  <use href="#sil" fill="url(#rim)" stroke="url(#rim)" stroke-width="10" stroke-linejoin="round"/>
+  <g fill="url(#hair)">
+    <circle cx="190" cy="142" r="24"/><circle cx="178" cy="172" r="21"/><circle cx="192" cy="198" r="17"/>
+    <circle cx="322" cy="142" r="24"/><circle cx="334" cy="172" r="21"/><circle cx="320" cy="198" r="17"/>
+  </g>
+  <use href="#sil" fill="#f7f4ec"/>
+  <g fill="none" stroke="#2b2540" stroke-width="7" stroke-linecap="round">
+    <path d="M224 158 Q234 146 244 158"/><path d="M268 158 Q278 146 288 158"/>
+  </g>
+  <path d="M222 204 Q256 236 290 204" fill="none" stroke="#e02f45" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="256" cy="186" r="20" fill="url(#nose)"/>
+  <circle cx="249" cy="179" r="6" fill="#fff" opacity="0.6"/>
+</svg>

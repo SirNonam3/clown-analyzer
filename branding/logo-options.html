@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clown Analyzer — logo options</title>
+<style>
+  body{margin:0;background:#0b0d16;color:#eceef8;font-family:Inter,'Segoe UI',system-ui,sans-serif}
+  h1{font-size:20px;margin:18px 20px 4px} .sub{color:#9299b3;font-size:13px;margin:0 20px 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;padding:0 20px 30px}
+  .card{background:#151827;border:1px solid #2b3049;border-radius:16px;padding:14px}
+  .t{font-weight:800;font-size:15px} .d{color:#9299b3;font-size:12px;margin:2px 0 12px}
+  .row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .ios{width:150px;height:150px;border-radius:34px;box-shadow:0 8px 24px #000a}
+  .and{width:96px;height:96px;border-radius:50%;box-shadow:0 6px 18px #000a}
+  .home{width:56px;height:56px;border-radius:13px}
+  .fav{width:32px;height:32px;border-radius:7px} .fav16{width:16px;height:16px;border-radius:4px}
+  .cap{font-size:10px;color:#9299b3;text-align:center;margin-top:4px}
+  .lock{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;margin-top:12px}
+  .lock img{width:28px;height:28px;border-radius:7px}
+  .lock span{font-weight:800;font-size:17px;letter-spacing:.3px}
+  .dark{background:#0d0f1a;border:1px solid #2b3049}
+  .dark span{background:linear-gradient(90deg,#a99cff,#4fd1c5);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .light{background:#f4f2fb} .light span{color:#2b2540}
+</style>
+</head>
+<body>
+<h1>🤡 Clown Analyzer — logo options</h1>
+<p class="sub">Each shown as App Store icon · Android round icon · home screen · browser tab (32 / 16 px) · next to the name.</p>
+<div class="grid" id="grid"></div>
+<script>
+const LOGOS=[
+  ['logo-13-harlequin-red.svg','Harlequin red · 1 · Red costume','Red & white circus hat, red bow tie, fiery red curly hair.'],
+  ['logo-14-harlequin-red-diamonds.svg','Harlequin red · 2 · Red Harlequin','Plus red painted diamond eyes (white outline) and red cheeks.'],
+  ['logo-15-harlequin-red-glow.svg','Harlequin red · 3 · Red Glow','Red costume with a red-pink neon glow around the clown.'],
+  ['logo-10-clown-auguste.svg','D · Auguste','Neon clown: white eye patches & muzzle, big grin, frilly ruffle collar.'],
+  ['logo-11-clown-harlequin.svg','E · Harlequin','Neon clown: painted diamond eyes, red grin, striped party hat, bow tie.'],
+  ['logo-12-clown-laughing.svg','F · Laughing','Neon clown laughing out loud: squeezed eyes, open mouth, wild rainbow hair.'],
+  ['logo-7-neon-mascot-a.svg','Mascot × Neon · A','Neon gradient body, bright white clown face, warm hair.'],
+  ['logo-8-neon-mascot-b.svg','Mascot × Neon · B','The whole clown is neon, with pink-orange hair and a glossy head.'],
+  ['logo-9-neon-mascot-c.svg','Mascot × Neon · C','The white clown lit by a violet/teal neon rim glow.'],
+  ['logo-1-classic.svg','1 · Classic','Today\'s idea, refined: a clean pawn with a glossy clown nose.'],
+  ['logo-2-mascot.svg','2 · Mascot','The pawn becomes a happy clown — face, smile and curly hair.'],
+  ['logo-3-jester-knight.svg','3 · Jester Knight','A knight in a jester hat, with a clown nose on its snout.'],
+  ['logo-4-blunder-lens.svg','4 · Blunder Lens','Analysis magnifier revealing the red "??" — the Clown move.'],
+  ['logo-5-red-nose.svg','5 · Red Nose','Minimal: one glossy clown nose on a chessboard.'],
+  ['logo-6-neon.svg','6 · Neon','Sleek gradient pawn glowing on a dark board.'],
+];
+document.getElementById('grid').innerHTML=LOGOS.map(([f,t,d])=>`
+  <div class="card">
+    <div class="t">${t}</div><div class="d">${d}</div>
+    <div class="row">
+      <div><img class="ios" src="${f}"><div class="cap">App Store</div></div>
+      <div><img class="and" src="${f}"><div class="cap">Android</div></div>
+      <div><img class="home" src="${f}"><div class="cap">Home</div></div>
+      <div><img class="fav" src="${f}"><div class="cap">32px</div></div>
+      <div><img class="fav16" src="${f}"><div class="cap">16px</div></div>
+    </div>
+    <div class="lock dark"><img src="${f}"><span>Clown Analyzer</span></div>
+    <div class="lock light"><img src="${f}"><span>Clown Analyzer</span></div>
+  </div>`).join('');
+</script>
+</body>
+</html>

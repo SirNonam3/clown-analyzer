@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8676f8"/><stop offset="1" stop-color="#3dbfb2"/>
+    </linearGradient>
+    <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- knight silhouette, facing left -->
+  <path id="k" d="
+    M 178 356
+    C 178 330, 188 304, 210 286
+    C 222 276, 230 266, 232 254
+    C 214 258, 190 258, 170 252
+    C 152 247, 142 238, 140 226
+    C 138 212, 146 202, 158 194
+    L 214 146
+    C 226 134, 240 122, 256 114
+    L 272 84
+    L 290 120
+    C 330 134, 360 176, 366 230
+    C 372 290, 352 330, 346 356 Z"/>
+  <use href="#k" fill="#1d1640" opacity="0.18" transform="translate(6 10)"/>
+  <use href="#k" fill="#f7f4ec"/>
+  <!-- mane -->
+  <path d="M302 150 Q322 170 330 200 M318 204 Q338 226 342 256 M326 262 Q344 284 344 312"
+        fill="none" stroke="#d8d2ea" stroke-width="7" stroke-linecap="round"/>
+  <!-- eye + mouth -->
+  <circle cx="238" cy="198" r="9" fill="#2b2540"/>
+  <path d="M168 240 Q184 248 202 246" fill="none" stroke="#c9c2dd" stroke-width="5" stroke-linecap="round"/>
+  <!-- jester hat: two floppy points with bells, on a dark band -->
+  <path d="M214 160 C204 128, 188 104, 160 92 C194 94, 228 110, 250 136 Z" fill="#e02f45"/>
+  <path d="M262 132 C284 100, 318 80, 354 74 C338 94, 322 116, 308 134 Z" fill="#ffc24b"/>
+  <path d="M206 166 C234 138, 270 124, 308 128 L312 146 C278 142, 246 154, 222 180 Z" fill="#2b2540"/>
+  <circle cx="158" cy="92" r="14" fill="#ffc24b"/>
+  <circle cx="356" cy="73" r="14" fill="#e02f45"/>
+  <!-- clown nose on the muzzle -->
+  <circle cx="146" cy="222" r="19" fill="url(#nose)"/>
+  <circle cx="140" cy="215" r="5.5" fill="#fff" opacity="0.6"/>
+  <!-- base -->
+  <g fill="#f7f4ec">
+    <rect x="150" y="354" width="212" height="30" rx="12"/>
+    <rect x="132" y="378" width="248" height="34" rx="14"/>
+  </g>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8676f8"/><stop offset="1" stop-color="#3dbfb2"/>
+    </linearGradient>
+    <clipPath id="lens"><circle cx="226" cy="226" r="104"/></clipPath>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- handle -->
+  <line x1="310" y1="310" x2="398" y2="398" stroke="#2b2540" stroke-width="54" stroke-linecap="round" opacity="0.25" transform="translate(4 6)"/>
+  <line x1="310" y1="310" x2="398" y2="398" stroke="#f7f4ec" stroke-width="50" stroke-linecap="round"/>
+  <!-- lens glass: a little chessboard seen through the lens -->
+  <g clip-path="url(#lens)">
+    <rect x="110" y="110" width="240" height="240" fill="#2a2556"/>
+    <g fill="#3a3478">
+      <rect x="122" y="122" width="52" height="52"/><rect x="226" y="122" width="52" height="52"/>
+      <rect x="174" y="174" width="52" height="52"/><rect x="278" y="174" width="52" height="52"/>
+      <rect x="122" y="226" width="52" height="52"/><rect x="226" y="226" width="52" height="52"/>
+      <rect x="174" y="278" width="52" height="52"/><rect x="278" y="278" width="52" height="52"/>
+    </g>
+  </g>
+  <!-- lens rim -->
+  <circle cx="226" cy="226" r="112" fill="none" stroke="#f7f4ec" stroke-width="30"/>
+  <!-- ?? (the Clown move) -->
+  <g fill="none" stroke="#ff4d5e" stroke-width="17" stroke-linecap="round" stroke-linejoin="round">
+    <path transform="translate(194 220)" d="M-24 -30 C-24 -60 28 -60 28 -30 C28 -8 2 -6 2 16"/>
+    <path transform="translate(260 220)" d="M-24 -30 C-24 -60 28 -60 28 -30 C28 -8 2 -6 2 16"/>
+  </g>
+  <circle cx="196" cy="266" r="11" fill="#ff4d5e"/>
+  <circle cx="262" cy="266" r="11" fill="#ff4d5e"/>
+</svg>

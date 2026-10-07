@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- E3 · Red Glow: E1 + red-pink neon glow -->
+  <defs>
+    <linearGradient id="piece" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#c3b9ff"/><stop offset="0.5" stop-color="#8f84f6"/><stop offset="1" stop-color="#4fd1c5"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#ff2d55" stop-opacity="0.32"/><stop offset="0.55" stop-color="#6d5ff0" stop-opacity="0.28"/><stop offset="1" stop-color="#6d5ff0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/>
+    </radialGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff4458"/><stop offset="1" stop-color="#d81f3a"/>
+    </linearGradient>
+    <clipPath id="hatClip"><path d="M218 122 L294 122 L262 40 Z"/></clipPath>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="#0f1124"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+  <g transform="translate(0 20)">
+  <g id="glow" fill="#ff3b5c" opacity="0.5" filter="url(#blur)">
+    <circle cx="256" cy="180" r="74"/>
+    <path d="M200 246 L312 246 L298 270 C298 314 322 342 346 364 L380 384 L380 416 L132 416 L132 384 L166 364 C190 342 214 314 214 270 Z"/>
+  </g>
+  <!-- red curly hair -->
+  <circle cx="186" cy="150" r="22" fill="#ff3b4f"/><circle cx="173" cy="178" r="20" fill="#ff6a3d"/><circle cx="186" cy="205" r="17" fill="#e0283c"/>
+  <circle cx="326" cy="150" r="22" fill="#ff3b4f"/><circle cx="339" cy="178" r="20" fill="#ff6a3d"/><circle cx="326" cy="205" r="17" fill="#e0283c"/>
+  <!-- neon pawn -->
+  <g fill="url(#piece)">
+    <circle cx="256" cy="180" r="68"/>
+    <rect x="188" y="244" width="136" height="26" rx="13"/>
+    <path d="M214 268 C214 312 190 340 166 364 L346 364 C322 340 298 312 298 268 Z"/>
+    <rect x="146" y="358" width="220" height="30" rx="12"/>
+    <rect x="128" y="382" width="256" height="34" rx="14"/>
+  </g>
+  <!-- red & white circus hat -->
+  <g clip-path="url(#hatClip)">
+    <rect x="200" y="30" width="110" height="100" fill="#fff6ee"/>
+    <g fill="url(#red)">
+      <path d="M200 118 L310 78 L310 96 L200 136 Z"/><path d="M200 84 L310 44 L310 62 L200 102 Z"/>
+      <path d="M200 50 L310 10 L310 28 L200 68 Z"/>
+    </g>
+  </g>
+  <circle cx="262" cy="40" r="15" fill="#ffd23f"/>
+  <!-- red bow tie -->
+  <path d="M256 257 L212 236 L212 278 Z" fill="url(#red)"/>
+  <path d="M256 257 L300 236 L300 278 Z" fill="url(#red)"/>
+  <circle cx="256" cy="257" r="11" fill="#ffd23f"/>
+  <!-- head gloss -->
+  <path d="M206 150 A58 58 0 0 1 238 120" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+  <!-- EYES -->
+  <path d="M232 140 L246 170 L232 200 L218 170 Z" fill="#fff"/>
+  <path d="M280 140 L294 170 L280 200 L266 170 Z" fill="#fff"/>
+  <circle cx="232" cy="170" r="8" fill="#1b1638"/><circle cx="280" cy="170" r="8" fill="#1b1638"/>
+  <circle cx="234.5" cy="167" r="2.8" fill="#fff"/><circle cx="282.5" cy="167" r="2.8" fill="#fff"/>
+  <!-- CHEEKS -->
+  <!-- red grin with white lip line -->
+  <path d="M220 212 Q256 254 292 212 Q256 230 220 212 Z" fill="#e02f45" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="256" cy="200" r="18" fill="url(#nose)"/>
+  <circle cx="250" cy="194" r="5" fill="#fff" opacity="0.65"/>
+  </g>
+</svg>
