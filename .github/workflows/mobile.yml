@@ -61,7 +61,8 @@ jobs:
       - name: Check the app started Stockfish 18
         run: |
           grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|falling back" android-logcat.txt | tail -20
-          grep -q "Engine ready · Stockfish 18" android-logcat.txt
+          grep -qF "Engine ready · Stockfish 18" android-logcat.txt
+          grep -qF "[analysis] best" android-logcat.txt
       - name: Upload smoke-test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,7 +105,7 @@ jobs:
           kill %1 || true
           grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|error|Error" ios-console.txt | tail -40 || true
       - name: Check the app started Stockfish 18
-        run: grep -q "Engine ready · Stockfish 18" ios-console.txt
+        run: grep -qF "Engine ready · Stockfish 18" ios-console.txt && grep -qF "[analysis] best" ios-console.txt
       - name: Upload smoke-test results
         if: always()
         uses: actions/upload-artifact@v4

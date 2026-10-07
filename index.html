@@ -618,7 +618,11 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
 function onEngineMsg(e){
   const line=typeof e.data==='string'?e.data:'';
   if(line==='readyok'||line.startsWith('uciok')){
-    if(!engineReady){engineReady=true;clearTimeout(engineInitTimer);setStatus('Engine ready · '+(SF_LABEL[SF_MODE]||SF_MODE));pump();}
+    if(!engineReady){
+      engineReady=true;clearTimeout(engineInitTimer);setStatus('Engine ready · '+(SF_LABEL[SF_MODE]||SF_MODE));pump();
+      // analyse the current position as soon as the engine is up (slow phones take >2s to get here)
+      if(!current&&!engineQueue.length&&!(puzzleMode&&!puzzleMode.solved))setTimeout(triggerAnalysis,0);
+    }
     return;
   }
   if(!current) return;
@@ -2169,7 +2173,7 @@ render();
 rebuildMoveList();
 initSounds();
 initEngine();
-setTimeout(()=>{ if(engineReady)triggerAnalysis(); else setTimeout(triggerAnalysis,1500); },800);
+// (initial analysis starts from the engine's 'readyok' handler, whenever the engine is up)
 
 /* register the service worker (offline app shell) — web only; the store apps bundle their files */
 if('serviceWorker' in navigator && location.protocol.startsWith('http') && !IS_NATIVE){
