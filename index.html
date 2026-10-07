@@ -329,11 +329,11 @@ details.more[open] summary{margin-bottom:8px}
 
     <!-- IMPORT -->
     <div class="tabpane" id="tab-chesscom">
-      <label class="fld">♟ Chess.com username</label>
-      <input type="text" id="ccUserCc" placeholder="hikaru  (or chess.com/member/hikaru)">
-      <label class="fld" style="margin-top:8px">🔶 Lichess username</label>
-      <input type="text" id="ccUserLi" placeholder="thibault  (or lichess.org/@/thibault)">
-      <p class="small" style="margin:6px 0 0">Fill either or both — games from both accounts are merged, newest first.</p>
+      <label class="fld">♟ Chess.com username(s)</label>
+      <input type="text" id="ccUserCc" placeholder="hikaru, my_second_account">
+      <label class="fld" style="margin-top:8px">🔶 Lichess username(s)</label>
+      <input type="text" id="ccUserLi" placeholder="thibault, another_account">
+      <p class="small" style="margin:6px 0 0">Separate several accounts with commas. Fill either or both — all games are merged, newest first. Profile links work too.</p>
       <div class="row" style="margin-top:8px">
         <label class="small">Chess.com month
           <select id="ccMonth"><option value="">latest</option></select>
@@ -1381,17 +1381,34 @@ async function ccApi(url){
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
+/* "hikaru, magnuscarlsen" → [{user,site}] — commas (or ; / new lines) separate accounts;
+   a pasted profile link decides its own site, plain names use the field's site. */
+function parseAccounts(raw, defaultSite){
+  const seen=new Set(), out=[];
+  for(const part of String(raw||'').split(/[,;\n]+/)){
+    const d=detectSite(part);
+    if(!d.user)continue;
+    const site=d.site||defaultSite, key=site+':'+d.user;
+    if(seen.has(key))continue; seen.add(key);
+    out.push({user:d.user, site});
+  }
+  return out;
+}
 /* Each fetcher tags games with _source, _me (your username), _ts (ms) for merging. */
 async function fetchChessCom(user){
-  let archiveUrl=document.getElementById('ccMonth').value;
-  if(!archiveUrl){
+  const month=document.getElementById('ccMonth').value; // 'YYYY/MM' or '' for each account's latest
+  let archiveUrl;
+  if(month) archiveUrl=`https://api.chess.com/pub/player/${user}/games/${month}`;
+  else {
     const arch=await ccApi(`https://api.chess.com/pub/player/${user}/games/archives`);
     if(!arch.archives.length)return[];
     archiveUrl=arch.archives[arch.archives.length-1];
   }
-  const data=await ccApi(archiveUrl);
+  let data;
+  try{ data=await ccApi(archiveUrl); }
+  catch(e){ if(month && /404/.test(e.message))return []; throw e; } // no games that month
   return (data.games||[]).filter(g=>g.pgn)
-    .map(g=>Object.assign(g,{_source:'chesscom',_me:user,_ts:(g.end_time||0)*1000}));
+    .map(g=>Object.assign(g,{_source:'chesscom',_me:user,_ts:(g.end_time||0)*1000,_id:g.url||g.uuid}));
 }
 /* Lichess: ND-JSON stream of the user's last games, mapped to the chess.com shape. */
 async function fetchLichess(user){
@@ -1408,22 +1425,27 @@ async function fetchLichess(user){
               result:j.winner===c?'win':(j.winner?'loss':'draw') };
     };
     return{ pgn:j.pgn, time_class:j.speed||'', white:side('white'), black:side('black'),
-            _source:'lichess', _me:user, _ts:j.createdAt||0 };
+            _source:'lichess', _me:user, _ts:j.createdAt||0, _id:j.id };
   }).filter(g=>g.pgn);
 }
 document.getElementById('ccUserCc').addEventListener('change',populateMonths);
+/* Months available on ANY of the Chess.com accounts (values are 'YYYY/MM'). */
 async function populateMonths(){
-  const det=detectSite(document.getElementById('ccUserCc').value);
-  const sel=document.getElementById('ccMonth');
+  const sel=document.getElementById('ccMonth'), keep=sel.value;
+  const accounts=parseAccounts(document.getElementById('ccUserCc').value,'chesscom').filter(a=>a.site==='chesscom');
   sel.innerHTML='<option value="">latest</option>';
-  if(!det.user||det.site==='lichess')return;
-  try{
-    const data=await ccApi(`https://api.chess.com/pub/player/${det.user}/games/archives`);
-    [...data.archives].reverse().slice(0,24).forEach(u=>{
-      const mm=u.match(/(\d{4})\/(\d{2})$/);
-      if(mm){const o=document.createElement('option');o.value=u;o.textContent=`${mm[1]}-${mm[2]}`;sel.appendChild(o);}
-    });
-  }catch(e){/* silent; fetch button will report */}
+  if(!accounts.length)return;
+  const months=new Set();
+  await Promise.all(accounts.map(async a=>{
+    try{
+      const data=await ccApi(`https://api.chess.com/pub/player/${a.user}/games/archives`);
+      for(const u of data.archives){ const mm=u.match(/(\d{4}\/\d{2})$/); if(mm)months.add(mm[1]); }
+    }catch(e){/* silent; the fetch button reports bad names */}
+  }));
+  [...months].sort().reverse().slice(0,24).forEach(m=>{
+    const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','-'); sel.appendChild(o);
+  });
+  if(keep && months.has(keep))sel.value=keep;
 }
 document.getElementById('ccFetch').onclick=async()=>{
   const ccRaw=document.getElementById('ccUserCc').value.trim();
@@ -1431,22 +1453,26 @@ document.getElementById('ccFetch').onclick=async()=>{
   try{ localStorage.setItem('cc_user_cc',ccRaw); localStorage.setItem('cc_user_li',liRaw); }catch(e){}
   const st=document.getElementById('ccStatus'), list=document.getElementById('ccList');
   list.innerHTML='';
-  // build fetch tasks; a pasted link overrides which box it's in
-  const tasks=[];
-  if(ccRaw){ const d=detectSite(ccRaw); tasks.push({user:d.user, site:d.site||'chesscom'}); }
-  if(liRaw){ const d=detectSite(liRaw); tasks.push({user:d.user, site:d.site||'lichess'}); }
-  if(!tasks.length){ st.textContent='Enter a Chess.com and/or Lichess username.'; return; }
-  st.textContent='Fetching games…';
+  // every comma-separated account in both fields becomes its own fetch
+  const tasks=[...parseAccounts(ccRaw,'chesscom'), ...parseAccounts(liRaw,'lichess')];
+  if(!tasks.length){ st.textContent='Enter a Chess.com and/or Lichess username (separate several with commas).'; return; }
+  st.textContent=`Fetching games from ${tasks.length} account${tasks.length>1?'s':''}…`;
   const results=await Promise.all(tasks.map(async t=>{
     try{ const games = t.site==='lichess'? await fetchLichess(t.user) : await fetchChessCom(t.user);
       return {ok:true, site:t.site, user:t.user, games}; }
     catch(e){ return {ok:false, site:t.site, user:t.user, err:e.message, games:[]}; }
   }));
-  ccGames = results.flatMap(r=>r.games).sort((a,b)=>b._ts-a._ts); // merged, newest first
+  // merge newest-first; a game between two of your own accounts is listed once
+  const seen=new Set();
+  ccGames=results.flatMap(r=>r.games).sort((a,b)=>b._ts-a._ts).filter(g=>{
+    const k=g._source+':'+(g._id||g.pgn.slice(0,300));
+    if(seen.has(k))return false; seen.add(k); return true;
+  });
   const nm=s=>s==='lichess'?'Lichess':'Chess.com';
-  const parts=results.map(r=> r.ok?`${r.games.length} from ${nm(r.site)}`:`${nm(r.site)} failed (${r.err})`);
-  if(!ccGames.length){ st.textContent='No games found. '+parts.join(' · '); return; }
-  st.textContent=`${ccGames.length} games · ${parts.join(' · ')} — click one.`;
+  const parts=results.map(r=> r.ok?`${esc(r.user)} (${nm(r.site)}): ${r.games.length}`
+    :`${esc(r.user)} (${nm(r.site)}): not found${/404/.test(r.err)?'':' — '+esc(r.err)}`);
+  if(!ccGames.length){ st.innerHTML='No games found.<br>'+parts.join(' · '); return; }
+  st.innerHTML=`<b>${ccGames.length} games</b> — click one to analyze.<br><span class="num">${parts.join(' · ')}</span>`;
   renderCcList(st,list);
 };
 function renderCcList(st,list){
