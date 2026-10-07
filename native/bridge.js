@@ -82,6 +82,7 @@ async function restore() {
 
 /* ---------- Ads (AdMob): one interstitial after a finished review, free tier only ---------- */
 let adsInit = null, canRequestAds = true, adLoaded = false, adLoading = null, lastAdAt = 0;
+let privacyOptionsRequired = false; // UMP says the app must offer a way to change ad-privacy choices
 function adUnit() {
   const a = cfg().ads || {};
   return platform === 'ios' ? a.iosInterstitial : a.androidInterstitial;
@@ -94,6 +95,8 @@ function initAds() {
       let info = await AdMob.requestConsentInfo();
       if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) info = await AdMob.showConsentForm();
       canRequestAds = info.canRequestAds !== false;
+      privacyOptionsRequired = info.privacyOptionsRequirementStatus === 'REQUIRED';
+      if (privacyOptionsRequired) window.dispatchEvent(new Event('native-privacy-options'));
     } catch (e) { console.warn('consent', e); }
     if (platform === 'ios') { // App Tracking Transparency
       try {
@@ -150,6 +153,9 @@ async function shareImage(dataUrl, name) {
   }
 }
 function minimize() { App.minimizeApp().catch(() => {}); }
+async function showPrivacyOptions() {
+  try { await AdMob.showPrivacyOptionsForm(); } catch (e) { console.warn('privacy options', e); }
+}
 
 /* ---------- Startup ---------- */
 let initPromise = null;
@@ -176,5 +182,7 @@ window.NativeBridge = {
   onPremiumChange: f => premiumListeners.push(f),
   getPackages, purchase, restore,
   prepareInterstitial, showInterstitialIfDue,
-  haptic, shareImage, minimize
+  haptic, shareImage, minimize,
+  privacyOptionsRequired: () => privacyOptionsRequired && !premium,
+  showPrivacyOptions
 };

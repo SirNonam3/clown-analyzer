@@ -420,6 +420,7 @@ details.more[open] summary{margin-bottom:8px}
   · Game data via Chess.com &amp; Lichess public APIs
   · Openings: <a href="https://github.com/lichess-org/chess-openings" target="_blank" rel="noopener">lichess chess-openings</a> (CC0)
   · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+  <span id="adPrivacyWrap" style="display:none">· <a href="#" id="adPrivacy">Ad privacy choices</a></span>
 </footer>
 
 <script src="config.js"></script>
@@ -452,18 +453,25 @@ function initEngine(){
   try{
     engine=makeSF();
   }catch(e){ setStatus('Engine failed to load'); return; }
-  // if the chosen engine doesn't report ready quickly, step down the fallback chain
-  clearTimeout(engineInitTimer);
-  engineInitTimer=setTimeout(()=>{
+  // Step down the fallback chain if the engine fails to start: immediately on a load error,
+  // or after a generous timeout (compiling the 7 MB NNUE engine takes several seconds on slow phones).
+  function stepDown(reason){
     if(engineReady)return;
     if(SF_MODE==='nnue-local')SF_MODE='wasm-local';
     else if(SF_MODE==='wasm-local')SF_MODE='asm-cdn';
-    else return;
-    console.warn('engine slow to init — falling back to '+SF_MODE);
+    else { setStatus('Engine failed to load'); return; }
+    console.warn('engine '+reason+' — falling back to '+SF_MODE);
+    clearTimeout(engineInitTimer);
     try{engine&&engine.terminate();}catch(e){} engine=null; initEngine();
-  }, 8000);
+  }
+  clearTimeout(engineInitTimer);
+  engineInitTimer=setTimeout(()=>stepDown('slow to init'), SF_MODE==='nnue-local'?30000:12000);
   engine.onmessage=onEngineMsg;
-  engine.onerror=(e)=>{ console.error('engine error',e.message||e); setStatus('Engine error — reloading…'); recoverEngine(); };
+  engine.onerror=(e)=>{
+    console.error('engine error',e.message||e);
+    if(!engineReady){ stepDown('failed to load'); return; } // never got going → try the next engine
+    setStatus('Engine error — reloading…'); recoverEngine();
+  };
   engine.postMessage('uci');
   engine.postMessage('setoption name MultiPV value 3'); // top-3 lines for the arrow display
   engine.postMessage('isready');
@@ -547,7 +555,8 @@ function analyzePool(fens, depth, mpv, onProgress, preset){
   const requeue=[];
   let next=0, filled=0;
   const workers=new Set();
-  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, 12, total));
+  // phones: at most 4 engines at once (each NNUE worker needs tens of MB of memory)
+  const POOL=Math.max(1, Math.min((navigator.hardwareConcurrency||2)-1, IS_NATIVE?4:12, total));
 
   // pre-fill from preset (deep cloud evals)
   if(preset)for(let i=0;i<total;i++){ if(preset[i]){results[i]=preset[i];filled++;} }
@@ -2187,6 +2196,7 @@ function refreshPremiumUi(){
   if(!window.NativeBridge||!NativeBridge.purchasesAvailable()){ btn.style.display='none'; return; }
   btn.style.display='';
   btn.textContent=NativeBridge.isPremium()?'⭐ Premium':'⭐ Go ad-free';
+  refreshAdPrivacyLink();
 }
 async function openPaywall(){
   const pw=document.getElementById('paywall'), pk=document.getElementById('pwPackages'), msg=document.getElementById('pwMsg');
@@ -2215,6 +2225,13 @@ document.getElementById('pwRestore').onclick=async()=>{
   msg.textContent=r.premium?'Restored — you’re Premium ⭐':(r.error?'Restore failed: '+r.error:'No active subscription found.');
   refreshPremiumUi();
 };
+/* Google UMP: when required (EEA/UK consent or US state privacy laws), offer a way to change choices */
+function refreshAdPrivacyLink(){
+  const show=!!(window.NativeBridge&&NativeBridge.privacyOptionsRequired());
+  document.getElementById('adPrivacyWrap').style.display=show?'':'none';
+}
+window.addEventListener('native-privacy-options',refreshAdPrivacyLink);
+document.getElementById('adPrivacy').onclick=e=>{ e.preventDefault(); if(window.NativeBridge)NativeBridge.showPrivacyOptions(); };
 /* Android hardware back button: close sheet → leave puzzle → back to Play → minimize */
 window.addEventListener('native-back',()=>{
   const pw=document.getElementById('paywall');
