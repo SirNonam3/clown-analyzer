@@ -272,6 +272,21 @@ details.more[open] summary{margin-bottom:8px}
 .hist-acc{font-weight:800;font-size:13px;text-align:right;white-space:nowrap}
 .hist-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
 .hist-del:hover{color:var(--bad)}
+/* favorite star: empty ☆ → filled ★ */
+.fav-star{background:none;border:none;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;padding:3px 5px;
+  flex:0 0 auto;transition:color .15s,transform .12s}
+.fav-star:hover{color:#f5c84e;transform:scale(1.15)}
+.fav-star.on{color:#f5c84e;text-shadow:0 0 10px #f5c84e66}
+.fav-star.pop,.fav-btn.pop{animation:favPop .35s ease}
+@keyframes favPop{0%{transform:scale(.6)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+button.btn.fav-btn{flex:0 0 auto;margin:0;white-space:nowrap}
+button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
+.hist-views{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:12px;margin-bottom:10px}
+.hist-views button{flex:1;background:transparent;border:none;color:var(--muted);font-weight:600;font-size:13px;
+  padding:7px;border-radius:9px;cursor:pointer;font-family:inherit}
+.hist-views button:hover{color:var(--text)}
+.hist-views button.active{background:var(--panel);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.hist-views button[data-hv="fav"].active{color:#f5c84e}
 /* premium */
 .donate.premium{border:none;cursor:pointer;font-family:inherit}
 .modal{position:fixed;inset:0;z-index:200;background:rgba(5,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
@@ -415,7 +430,11 @@ details.more[open] summary{margin-bottom:8px}
 
     <!-- HISTORY -->
     <div class="tabpane" id="tab-history">
-      <p class="small">Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan.</p>
+      <div class="hist-views">
+        <button data-hv="recent" class="active">🕘 Recent</button>
+        <button data-hv="fav">★ Favorites <span id="favCount"></span></button>
+      </div>
+      <p class="small" id="histHint">Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan. Tap ☆ to keep a game in Favorites.</p>
       <div id="histStats" class="small" style="margin:6px 0 8px"></div>
       <div id="histList"></div>
       <button class="btn sec" id="histClear" style="display:none;margin-top:10px">Clear history</button>
@@ -1362,6 +1381,15 @@ function switchTab(name){
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
   document.querySelectorAll('.tabpane').forEach(x=>x.classList.toggle('active',x.id==='tab-'+name));
   if(name==='history')renderHistory();
+  if(name==='chesscom')refreshCcStars();
+}
+function refreshCcStars(){ // a game starred elsewhere shows ★ in the import list too
+  if(!ccGames||!ccGames.length)return;
+  const ids=new Set(loadFavs().map(f=>f.id).filter(Boolean));
+  document.querySelectorAll('#ccList .ccgame').forEach(el=>{
+    const b=el.querySelector('.fav-star'), on=ids.has(ccGameId(ccGames[+el.dataset.i]));
+    if(b&&b.classList.contains('on')!==on){ b.classList.toggle('on',on); b.textContent=on?'★':'☆'; }
+  });
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
@@ -1369,6 +1397,7 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.d
 let currentPgn=null;    // PGN of the loaded game (history + opening detection)
 let currentMeSide=null; // 'w'|'b' when the game was imported from your account
 let currentSource=null; // 'chesscom'|'lichess'|null
+let currentGameId=null; // 'chesscom:<url>' / 'lichess:<id>' for imported games (favorites match on it)
 document.getElementById('newGame').onclick=()=>{
   game.reset();fullHistory=null;startFen=null;currentPgn=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;clearJudge();
   clearArrow();render();rebuildMoveList();triggerAnalysis();
@@ -1384,7 +1413,7 @@ function loadGameFromPgn(pgn){
   startFen=null;
   const fenH=pgn.match(/\[FEN "([^"]+)"\]/);
   if(fenH){startFen=fenH[1];}
-  currentPgn=pgn; currentMeSide=null; currentSource=null; // import handler sets these after loading
+  currentPgn=pgn; currentMeSide=null; currentSource=null; currentGameId=null; // import handler sets these after loading
   gameMeta=extractGameMeta(pgn,fullHistory);
   if(startFen){ gameMeta.opening=null; gameMeta.eco=null; gameMeta.bookPlies=0; } // custom start: no book
   game.reset(); if(startFen)game.load(startFen);
@@ -1530,6 +1559,7 @@ document.getElementById('ccFetch').onclick=async()=>{
 };
 function renderCcList(st,list){
   const srcTag=s=>`<span class="src src-${s==='lichess'?'li':'cc'}">${s==='lichess'?'Li':'CC'}</span>`;
+  const favIds=new Set(loadFavs().map(f=>f.id).filter(Boolean));
   list.innerHTML=ccGames.map((g,i)=>{
       const w=g.white||{},b=g.black||{}, me=g._me;
       const res=w.result==='win'?'1-0':b.result==='win'?'0-1':'½-½';
@@ -1542,20 +1572,28 @@ function renderCcList(st,list){
       const youMark=' <span class="num">(you)</span>';
       const wLabel=youAreWhite?`<b>${esc(wn)}</b>${youMark}`:esc(wn);
       const bLabel=!youAreWhite?`<b>${esc(bn)}</b>${youMark}`:esc(bn);
-      return `<div class="ccgame" data-i="${i}" style="padding:6px 8px;border-radius:6px;cursor:pointer">
-        ${srcTag(g._source)} <span class="tag ${tag}">${outcome}</span>
+      const fav=favIds.has(ccGameId(g));
+      return `<div class="ccgame" data-i="${i}" style="padding:6px 8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <div style="flex:1;min-width:0">${srcTag(g._source)} <span class="tag ${tag}">${outcome}</span>
         ${wLabel} (${w.rating||'?'}) vs ${bLabel} (${b.rating||'?'})
-        <span class="num">${yourScore} · ${g.time_class||''}</span></div>`;
+        <span class="num">${yourScore} · ${g.time_class||''}</span></div>
+        ${favStarHtml(fav)}</div>`;
     }).join('');
     list.querySelectorAll('.ccgame').forEach(el=>{
       el.onmouseenter=()=>el.style.background='var(--panel2)';
       el.onmouseleave=()=>el.style.background='';
+      el.querySelector('.fav-star').onclick=e=>{ // star without opening the game
+        e.stopPropagation();
+        const g=ccGames[+el.dataset.i];
+        const on=toggleFav(favFromCcGame(g));
+        if(on!==null)setFavStar(e.currentTarget,on);
+      };
       el.onclick=()=>{
         const g=ccGames[+el.dataset.i];
         if(loadGameFromPgn(g.pgn)){
           const blackIsUser=(g.black&&g.black.username&&g.black.username.toLowerCase()===g._me);
           currentMeSide=blackIsUser?'b':'w'; // which side you played — used for progress stats
-          currentSource=g._source||null;
+          currentSource=g._source||null; currentGameId=ccGameId(g);
           if(blackIsUser!==flipped){flipped=blackIsUser;render();paintEvalBar();}
           st.textContent='Loaded — analyzing…';
           switchTab('review');
@@ -2172,9 +2210,19 @@ function renderReview(){
     const badge=m?` <span class="rs-badge" style="background:${m.color}" title="${m.label}">${m.icon}</span>`:'';
     moves+=`<span class="mv" data-ply="${i+1}">${fullHistory[i]}${badge}</span>`;
   }
-  const shareBtn=reviewAccuracy?`<button class="btn" id="shareBtn" style="width:100%;margin:0 0 10px">📤 Share report card</button>`:'';
+  const fav=fullHistory&&isFavKey(gameKey(),currentGameId);
+  const shareBtn=reviewAccuracy?`<div style="display:flex;gap:8px;margin:0 0 10px">
+    <button class="btn" id="shareBtn" style="flex:1;margin:0">📤 Share report card</button>
+    <button class="btn sec fav-btn${fav?' on':''}" id="favBtn" title="${fav?'Remove from favorites':'Save to favorites'}">${fav?'★ Saved':'☆ Save'}</button></div>`:'';
   el.innerHTML=accuracy+shareBtn+openingHtml+graphHtml+hlHtml+momentsHtml+table+`<div style="margin-top:6px">${moves}</div>`;
   const sb=document.getElementById('shareBtn'); if(sb)sb.onclick=shareReport;
+  const fb=document.getElementById('favBtn');
+  if(fb)fb.onclick=()=>{
+    const on=toggleFav(favFromCurrentGame()); if(on===null)return;
+    fb.classList.toggle('on',on); fb.textContent=on?'★ Saved':'☆ Save';
+    fb.title=on?'Remove from favorites':'Save to favorites';
+    if(on){ fb.classList.remove('pop'); void fb.offsetWidth; fb.classList.add('pop'); }
+  };
   el.querySelectorAll('.mv').forEach(s=>s.addEventListener('click',()=>gotoPly(+s.dataset.ply)));
   el.querySelectorAll('.hl-chip,.km-row').forEach(s=>s.addEventListener('click',()=>gotoPly(+s.dataset.ply)));
   const svg=document.getElementById('evalGraph');
@@ -2215,7 +2263,7 @@ function saveToHistory(){
   list.unshift({ key, ts:Date.now(), pgn:currentPgn||'', fen:startFen||null,
     sans:currentPgn?null:fullHistory, meta:gameMeta, acc:reviewAccuracy,
     data:reviewData, evals:reviewEvals, pz:puzzleCands||[], me:currentMeSide, src:currentSource,
-    flipped, depth:+document.getElementById('reviewDepth').value });
+    id:currentGameId, flipped, depth:+document.getElementById('reviewDepth').value });
   storeHistory(list.slice(0,HIST_MAX));
 }
 function openFromHistory(h){
@@ -2229,13 +2277,88 @@ function openFromHistory(h){
   }
   if(!ok){ alert('Could not reopen this game.'); return; }
   gameMeta=h.meta||gameMeta; reviewAccuracy=h.acc; reviewData=h.data; reviewEvals=h.evals;
-  puzzleCands=h.pz||[]; currentMeSide=h.me||null; currentSource=h.src||null;
+  puzzleCands=h.pz||[]; currentMeSide=h.me||null; currentSource=h.src||null; currentGameId=h.id||null;
   flipped=!!h.flipped; paintEvalBar();
   switchTab('review');
   renderReview();
   gotoPly(0);
 }
+/* ---------- Favorite games ★ (saved on this device, never trimmed like the history) ---------- */
+const FAV_KEY='favGames_v1';
+function loadFavs(){ try{ return JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); }catch(e){ return []; } }
+function storeFavs(list){
+  try{ localStorage.setItem(FAV_KEY,JSON.stringify(list)); return true; }
+  catch(e){ alert('Device storage is full — could not save the favorite. Delete a few reviews in History and try again.'); return false; }
+}
+function ccGameId(g){ return g._id?(g._source||'chesscom')+':'+g._id:null; }
+function pgnGameKey(pgn){ // same format as gameKey() — matches favorites with saved reviews
+  const g=new Chess(); if(!g.load_pgn(pgn,{sloppy:true}))return null;
+  const f=pgn.match(/\[FEN "([^"]+)"\]/);
+  return {key:(f?f[1]:'')+'|'+g.history().join(' '), sans:g.history()};
+}
+function isFavKey(key,id){ return loadFavs().some(f=>f.key===key||(id&&f.id===id)); }
+function favFromCcGame(g){
+  const k=pgnGameKey(g.pgn); if(!k)return null;
+  const meta=extractGameMeta(g.pgn,k.sans);
+  const blackIsUser=!!(g.black&&g.black.username&&g.black.username.toLowerCase()===g._me);
+  return { key:k.key, id:ccGameId(g), pgn:g.pgn, fen:null, sans:null, src:g._source||null,
+    me:blackIsUser?'b':'w', flipped:blackIsUser, played:g._ts||null,
+    meta:{white:meta.white, black:meta.black, result:meta.result, opening:meta.opening,
+      whiteElo:g.white&&g.white.rating, blackElo:g.black&&g.black.rating, timeClass:g.time_class||null} };
+}
+function favFromCurrentGame(){
+  if(!fullHistory)return null;
+  const m=gameMeta||{};
+  return { key:gameKey(), id:currentGameId, pgn:currentPgn||'', fen:startFen||null,
+    sans:currentPgn?null:fullHistory.slice(), src:currentSource, me:currentMeSide, flipped, played:null,
+    meta:{white:m.white, black:m.black, result:m.result, opening:m.opening} };
+}
+function favFromHistory(h){
+  return { key:h.key, id:h.id||null, pgn:h.pgn||'', fen:h.fen||null, sans:h.sans||null, src:h.src||null,
+    me:h.me||null, flipped:!!h.flipped, played:null, meta:Object.assign({},h.meta||{}) };
+}
+// toggles a game in favorites; returns the new state (true = saved), or null if nothing changed
+function toggleFav(entry){
+  if(!entry||!entry.key)return null;
+  const list=loadFavs();
+  const i=list.findIndex(f=>f.key===entry.key||(entry.id&&f.id===entry.id));
+  if(i>=0){ list.splice(i,1); return storeFavs(list)?false:null; }
+  entry.ts=Date.now(); list.unshift(entry);
+  if(!storeFavs(list))return null;
+  if(window.NativeBridge)NativeBridge.haptic('success');
+  return true;
+}
+function favStarHtml(on){
+  return `<button class="fav-star${on?' on':''}" title="${on?'Remove from favorites':'Save to favorites'}" aria-pressed="${on}">${on?'★':'☆'}</button>`;
+}
+function setFavStar(btn,on){
+  btn.classList.toggle('on',on); btn.textContent=on?'★':'☆';
+  btn.title=on?'Remove from favorites':'Save to favorites'; btn.setAttribute('aria-pressed',on);
+  if(on){ btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+}
+function openFavorite(f){
+  const h=loadHistory().find(x=>x.key===f.key);
+  if(h){ openFromHistory(h); if(f.id)currentGameId=f.id; return; } // review already saved — no rescan
+  if(puzzleMode)document.getElementById('pzExit').click();
+  let pgn=f.pgn;
+  if(!pgn&&f.sans){ const g=new Chess(); if(f.fen)g.load(f.fen); for(const s of f.sans)g.move(s);
+    pgn=(f.fen?`[SetUp "1"]\n[FEN "${f.fen}"]\n\n`:'')+g.pgn(); }
+  if(!loadGameFromPgn(pgn)){ alert('Could not open this game.'); return; }
+  currentMeSide=f.me||null; currentSource=f.src||null; currentGameId=f.id||null;
+  if(!!f.flipped!==flipped){ flipped=!!f.flipped; render(); paintEvalBar(); }
+  switchTab('review');
+  document.getElementById('runReview').click();
+}
+
+let histView='recent'; // 'recent' | 'fav'
+document.querySelectorAll('.hist-views button').forEach(b=>b.onclick=()=>{ histView=b.dataset.hv; renderHistory(); });
 function renderHistory(){
+  const favs=loadFavs();
+  document.getElementById('favCount').textContent=favs.length?`(${favs.length})`:'';
+  document.querySelectorAll('.hist-views button').forEach(b=>b.classList.toggle('active',b.dataset.hv===histView));
+  if(histView==='fav'){ renderFavorites(favs); return; }
+  document.getElementById('histHint').textContent='Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan. Tap ☆ to keep a game in Favorites.';
+  const favKeys=new Set(favs.map(f=>f.key));
   const list=loadHistory();
   const box=document.getElementById('histList');
   document.getElementById('histClear').style.display=list.length?'inline-block':'none';
@@ -2260,18 +2383,51 @@ function renderHistory(){
     const when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
     const sub=[when, m.result, m.opening?esc(m.opening):null, h.src==='lichess'?'Lichess':h.src==='chesscom'?'Chess.com':null].filter(Boolean).join(' · ');
     const a=h.acc||{};
-    const accCell=(side,lbl)=>a[side]==null?'':`<span style="color:${accColorOf(a[side])}">${lbl}${h.me===side?'★':''} ${a[side].toFixed(0)}</span>`;
+    const accCell=(side,lbl)=>a[side]==null?'':`<span style="color:${accColorOf(a[side])}" title="${h.me===side?'You':''}">${lbl}${h.me===side?'•':''} ${a[side].toFixed(0)}</span>`;
     return `<div class="hist-item" data-i="${i}">
+      ${favStarHtml(favKeys.has(h.key))}
       <div class="hist-main"><div class="hist-title">${title}</div><div class="hist-sub">${sub}</div></div>
       <div class="hist-acc">${accCell('w','W')}<br>${accCell('b','B')}</div>
       <button class="hist-del" data-del="${i}" title="Delete">✕</button></div>`;
   }).join('');
-  box.querySelectorAll('.hist-item').forEach(el=>el.onclick=e=>{
-    if(e.target.closest('.hist-del'))return;
-    openFromHistory(loadHistory()[+el.dataset.i]);
+  box.querySelectorAll('.hist-item').forEach(el=>{
+    el.onclick=e=>{ if(e.target.closest('.hist-del,.fav-star'))return; openFromHistory(loadHistory()[+el.dataset.i]); };
+    el.querySelector('.fav-star').onclick=e=>{
+      const on=toggleFav(favFromHistory(loadHistory()[+el.dataset.i]));
+      if(on!==null){ setFavStar(e.currentTarget,on); const n=loadFavs().length; document.getElementById('favCount').textContent=n?`(${n})`:''; }
+    };
   });
   box.querySelectorAll('.hist-del').forEach(b=>b.onclick=()=>{
     const l=loadHistory(); l.splice(+b.dataset.del,1); storeHistory(l); renderHistory();
+  });
+}
+function renderFavorites(favs){
+  document.getElementById('histHint').textContent=favs.length
+    ?'Your starred games stay here until you remove them. Tap one to open it (reviews you already ran open instantly).'
+    :'No favorites yet — tap ☆ on a game in Import, Review or Recent to save it here.';
+  document.getElementById('histStats').textContent='';
+  document.getElementById('histClear').style.display='none';
+  const hist=new Map(loadHistory().map(h=>[h.key,h]));
+  const box=document.getElementById('histList');
+  box.innerHTML=favs.map((f,i)=>{
+    const m=f.meta||{};
+    const elo=v=>v?` (${v})`:'';
+    const title=(m.white||m.black)?`${esc(m.white||'?')}${elo(m.whiteElo)} vs ${esc(m.black||'?')}${elo(m.blackElo)}`:'Your game';
+    const when=new Date(f.played||f.ts).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+    const sub=[when, m.result, m.timeClass, m.opening?esc(m.opening):null,
+      f.src==='lichess'?'Lichess':f.src==='chesscom'?'Chess.com':null].filter(Boolean).join(' · ');
+    const h=hist.get(f.key), a=(h&&h.acc)||{};
+    const accCell=(side,lbl)=>a[side]==null?'':`<span style="color:${accColorOf(a[side])}">${lbl}${f.me===side?'•':''} ${a[side].toFixed(0)}</span>`;
+    return `<div class="hist-item" data-i="${i}">
+      ${favStarHtml(true)}
+      <div class="hist-main"><div class="hist-title">${title}</div><div class="hist-sub">${sub}</div></div>
+      <div class="hist-acc">${h?accCell('w','W')+'<br>'+accCell('b','B'):'<span class="small">not reviewed</span>'}</div></div>`;
+  }).join('');
+  box.querySelectorAll('.hist-item').forEach(el=>{
+    el.onclick=e=>{ if(e.target.closest('.fav-star'))return; openFavorite(loadFavs()[+el.dataset.i]); };
+    el.querySelector('.fav-star').onclick=()=>{ // un-star → remove from the list
+      const l=loadFavs(); l.splice(+el.dataset.i,1); if(storeFavs(l))renderHistory();
+    };
   });
 }
 document.getElementById('histClear').onclick=()=>{
