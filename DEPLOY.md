@@ -3,7 +3,7 @@
 The site is 100% static — no server code — so hosting is free.
 
 ## Files that must be uploaded together
-- `index.html`
+- `index.html`, `config.js`, `openings.json`, `privacy.html`
 - `chess.min.js`  (move logic — bundled locally for offline)
 - `stockfish-18-lite-single.js`, `stockfish-18-lite-single.wasm`  (main engine — Stockfish 18 NNUE)
 - `stockfish.wasm.js`, `stockfish.wasm`, `stockfish.js`  (fallback engines — do not omit)
