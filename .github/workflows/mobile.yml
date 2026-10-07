@@ -58,10 +58,10 @@ jobs:
             adb exec-out screencap -p > android-screenshot.png
             adb logcat -d > android-logcat.txt || true
             grep -E "Capacitor/Console|chromium|AndroidRuntime" android-logcat.txt | tail -80 || true
-      - name: Check the app started Stockfish 18
+      - name: Check the app started Stockfish 19
         run: |
           grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|falling back" android-logcat.txt | tail -20
-          grep -qF "Engine ready · Stockfish 18" android-logcat.txt
+          grep -qF "Engine ready · Stockfish 19" android-logcat.txt
           grep -qF "[analysis] best" android-logcat.txt
       - name: Upload smoke-test results
         if: always()
@@ -104,8 +104,8 @@ jobs:
           xcrun simctl io "$UDID" screenshot ios-screenshot.png
           kill %1 || true
           grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|error|Error" ios-console.txt | tail -40 || true
-      - name: Check the app started Stockfish 18
-        run: grep -qF "Engine ready · Stockfish 18" ios-console.txt && grep -qF "[analysis] best" ios-console.txt
+      - name: Check the app started Stockfish 19
+        run: grep -qF "Engine ready · Stockfish 19" ios-console.txt && grep -qF "[analysis] best" ios-console.txt
       - name: Upload smoke-test results
         if: always()
         uses: actions/upload-artifact@v4

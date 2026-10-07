@@ -432,7 +432,7 @@ const engineQueue=[]; // {fen, depth, onInfo, onDone}
 let current=null;
 
 const SF_URL='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
-/* Engine preference: Stockfish 18 NNUE (local wasm) → Stockfish 10 (local wasm)
+/* Engine preference: Stockfish 19 NNUE (local wasm) → Stockfish 10 (local wasm)
    → CDN asm.js blob worker (file:// where local workers are blocked). */
 // http(s) on the web, https://localhost on Android and capacitor:// on iOS all serve the
 // local engine files; only file:// blocks local workers.
@@ -440,14 +440,14 @@ let SF_MODE=(location.protocol==='file:')?'asm-cdn':'nnue-local';
 const IS_NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 function makeSF(){
   if(SF_MODE==='nnue-local'){
-    try{ return new Worker('stockfish-18-lite-single.js'); }catch(e){ SF_MODE='wasm-local'; }
+    try{ return new Worker('stockfish-19-lite-single.js'); }catch(e){ SF_MODE='wasm-local'; }
   }
   if(SF_MODE==='wasm-local'){
     try{ return new Worker('stockfish.wasm.js'); }catch(e){ SF_MODE='asm-cdn'; }
   }
   return new Worker(URL.createObjectURL(new Blob([`importScripts('${SF_URL}');`],{type:'application/javascript'})));
 }
-const SF_LABEL={'nnue-local':'Stockfish 18','wasm-local':'Stockfish 10','asm-cdn':'Stockfish 10 asm'};
+const SF_LABEL={'nnue-local':'Stockfish 19','wasm-local':'Stockfish 10','asm-cdn':'Stockfish 10 asm'};
 let engineInitTimer=null;
 function initEngine(){
   try{
@@ -770,6 +770,7 @@ let excursionPly=null; // ply where the user left the loaded game to try their o
 let liveAnal=null;     // latest engine data for the current position {fen, evW, best, secondEvW}
 let pendingJudge=null; // user just moved; classify once the new position's analysis lands
 let liveBadge=null;    // {sq, cat} quality badge for the user's tried move
+let lastLiveJudge=null;// {fenAfter, cat, beforeEvW} of the last judged move (for "punished a mistake")
 let puzzleMode=null;   // {solution:[uci], idx, solverWhite, solved} while a puzzle is active
 let puzzleReturn=null; // where to go back to on exit {had, ply}
 let puzzleCands=null;  // tactic candidates collected by the last review scan
@@ -913,11 +914,18 @@ function tryMove(from,to,noAnim){
   selected=null;
   clearJudge();
   const capVal=PVAL[made.captured]||0;
+  const mi=materialInfo(fenBefore), moverW=made.color==='w';
+  const matLead=moverW?mi.w-mi.b:mi.b-mi.w;
+  // the previous move on this board (the opponent's), if we judged it
+  const prevJ=(lastLiveJudge&&lastLiveJudge.fenAfter===fenBefore)?lastLiveJudge:null;
   if(made.san.includes('#')){ // mate delivered: no need to wait for the engine
     const sac=isSacrifice(game.fen(),made.color,made.to,capVal);
-    setTimeout(()=>showJudge(made.san,made.to,sac?'brilliant':'best'),0);
+    const competitive=matLead<3 && (!prevJ || winPct((moverW?1:-1)*prevJ.beforeEvW)<=75);
+    setTimeout(()=>showJudge(made.san,made.to,(sac&&competitive)?'brilliant':'best'),0);
   } else if(snap&&snap.best&&!game.game_over()){
     pendingJudge={fenAfter:game.fen(), beforeEvW:snap.evW, best:snap.best, secondEvW:snap.secondEvW,
+      matLead, endgame:mi.nonPawn<=ENDGAME_NONPAWN,
+      prevBeforeEvW:prevJ?prevJ.beforeEvW:null, oppErred:!!(prevJ&&OPP_ERRORS.includes(prevJ.cat)),
       moverWhite:made.color==='w', to:made.to, san:made.san,
       playedUci:(made.from+made.to+(made.promotion||'')).toLowerCase(),
       sac:isSacrifice(game.fen(),made.color,made.to,capVal),
@@ -1047,7 +1055,10 @@ function triggerAnalysis(){
         isBest:j.playedUci.slice(0,4)===(j.best||'').slice(0,4),
         sac:j.sac, trivialRecap:j.trivialRecap,
         evalAfterMover:sign*afterEvW, evalBeforeMover:sign*j.beforeEvW,
-        legalCount:j.legalCount, isBook:false});
+        legalCount:j.legalCount, isBook:false,
+        matLead:j.matLead, endgame:j.endgame, oppErred:j.oppErred,
+        evalPrevMover:j.prevBeforeEvW==null?null:sign*j.prevBeforeEvW});
+      lastLiveJudge={fenAfter:j.fenAfter, cat, beforeEvW:j.beforeEvW};
       showJudge(j.san, j.to, cat);
     }
   });
@@ -1775,23 +1786,61 @@ function isSacrifice(fenAfter, mover, toSq, capturedVal){
     const net = gained - V + W;                  // net material: won − piece lost + recapture
     if(net<bestNet) bestNet=net;
   }
-  return bestNet <= -2;                          // ends at least a minor piece down = a real sac
+  // a real sacrifice ends material down: a piece for two pawns (−1), the exchange (−2), a piece (−3)…
+  // equal trades (knight for bishop, piece for three pawns) are 0 and don't count
+  return bestNet <= -1;
 }
 /* Classify by win-probability loss (wl, 0-100) — auto-relaxes in decided positions
    where big cp swings don't change the result. */
+/* Material from a FEN: totals per side (pawns included) and non-pawn material of both sides. */
+function materialInfo(fen){
+  let w=0,b=0,nonPawn=0;
+  for(const ch of fen.split(' ')[0]){
+    const v=PVAL[ch.toLowerCase()]; if(v===undefined)continue;
+    if(ch===ch.toUpperCase())w+=v; else b+=v;
+    if(!'pPkK'.includes(ch))nonPawn+=v;
+  }
+  return {w,b,nonPawn};
+}
+const ENDGAME_NONPAWN=26; // both sides' N/B/R/Q points combined (start = 62); e.g. R+B vs R+N = 16
+const OPP_ERRORS=['mistake','miss','blunder'];
+
+/* d: wl, gapWl, isBest, sac, trivialRecap, evalBeforeMover, evalAfterMover, legalCount, isBook,
+      matLead (mover's material lead before the move), endgame (bool),
+      evalPrevMover (mover-POV eval before the opponent's last move, or null), oppErred (bool) */
 function classify(d){
   const wl=Math.max(0,d.wl);
-  // brilliant = a (near-)best sacrifice that leads to forced mate, or wins a clear
-  // material/positional advantage (and you weren't already crushing). Queen sac for mate = the model case.
-  const sacMates   = d.evalAfterMover>=90000;                       // sacrifice forces mate
-  const sacWins    = d.evalAfterMover>=150 && d.evalBeforeMover<=300; // sacrifice nets a real advantage
-  if(d.sac && (d.isBest||wl<=2) && !d.isBook && (sacMates||sacWins)) return 'brilliant';
-  // awesome = the only move that saves/keeps the game (2nd best collapses), or a hard-to-find
-  // move that lands you a winning material advantage. Routine recaptures never qualify.
-  const onlyMove   = d.gapWl>=14 && d.evalAfterMover>=-50;          // unique: everything else loses
-  const winsMat    = d.gapWl>=10 && d.evalAfterMover>=200;          // non-obvious and clearly winning after
-  if(d.isBest && !d.sac && !d.trivialRecap && d.legalCount>1 && wl<=1.5 && (onlyMove||winsMat)) return 'great';
+
+  // BRILLIANT (!!) — a strong sacrifice of a piece or the exchange (rook for a minor piece):
+  //  • strong: the engine's best move (or practically as good) and it works — mate or a clear edge
+  //  • only in competitive positions: not when already a lot of material up, and not when
+  //    already clearly winning before the opponent's last move
+  //  • endgame: must be the ONLY good move; opening/middlegame: may be one of several good moves
+  if(d.sac && !d.isBook && (d.isBest||wl<=2)){
+    const works      = d.evalAfterMover>=100;             // forced mate (≥90000) or at least a clear edge
+    const competitive= d.matLead<3 && (d.evalPrevMover==null || winPct(d.evalPrevMover)<=75);
+    const uniqueOK   = !d.endgame || d.gapWl>=10;
+    if(works && competitive && uniqueOK) return 'brilliant';
+  }
+
+  // known opening theory reads as Theoretical, even when it happens to be the only good move
   if(d.isBook && wl<=6) return 'book';
+
+  // AWESOME (!) — one of three things, always the engine's best move:
+  //  1) the only good move in the position, and you found it
+  //  2) the game was equal, the opponent erred, you punished it → now you're winning
+  //  3) you were losing, the opponent erred, you punished it → now it's equal (or better)
+  // Plain recaptures don't count, and the punishing move must be the one that works (2nd best is clearly worse).
+  if(d.isBest && wl<=1.5){
+    const onlyMove = !d.trivialRecap && d.legalCount>1 && d.gapWl>=14 && d.evalAfterMover>=-50;
+    let punished=false;
+    if(d.oppErred && d.evalPrevMover!=null && !d.trivialRecap && d.gapWl>=5){
+      const wPrev=winPct(d.evalPrevMover), wNow=winPct(d.evalAfterMover);
+      if(wPrev>=35 && wPrev<=65 && wNow>=70) punished=true;   // equal → winning
+      if(wPrev<35 && wNow>=40) punished=true;                 // losing → equal
+    }
+    if(onlyMove||punished) return 'great';
+  }
   if(d.isBest || wl<=0.5) return 'best';  // engine's #1 move, or one that loses ~0 win% (ties/noise)
   if(wl<=2.5) return 'excellent';         // clearly near-best
   if(wl<=6)   return 'good';
@@ -1864,8 +1913,16 @@ async function runReviewScan(){
     const trivialRecap=!!(verbose[i].captured && prev && prev.captured && prev.to===verbose[i].to);
     // "book" = inside the matched opening line, or an early position of a standard game found in
     // the lichess cloud cache (custom-FEN games never get book labels — the cloud caches any position)
-    const isBook = (gameMeta && i<gameMeta.bookPlies) || (!startFen && i<20 && reviewBookHits && reviewBookHits[i+1]);
-    const cat = classify({wl, gapWl, isBest, sac, trivialRecap, evalAfterMover, evalBeforeMover:sign*before, legalCount, isBook});
+    // "book" = inside a named line of the opening database, or a very early (first 6 moves each)
+    // position stored in the lichess cloud. Deeper cloud hits aren't theory — famous games and
+    // popular traps are cached there too.
+    const isBook = (gameMeta && i<gameMeta.bookPlies) || (!startFen && i<12 && reviewBookHits && reviewBookHits[i+1]);
+    const mi = materialInfo(fens[i]);
+    const cat = classify({wl, gapWl, isBest, sac, trivialRecap, evalAfterMover, evalBeforeMover:sign*before, legalCount, isBook,
+      matLead: moverWhite ? mi.w-mi.b : mi.b-mi.w,
+      endgame: mi.nonPawn<=ENDGAME_NONPAWN,
+      evalPrevMover: i>0 ? sign*evals[i-1] : null,              // before the opponent's last move
+      oppErred: i>0 && !!reviewData[i-1] && OPP_ERRORS.includes(reviewData[i-1].cat)});
     reviewData[i]={cat, cl:Math.round(cl), moverWhite, to:verbose[i].to};
     (moverWhite?accsW:accsB).push(moveAcc(wb,wa));
   }

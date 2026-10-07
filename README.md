@@ -7,7 +7,7 @@ Free chess game analysis — on the web, Android and iOS. How many Clown moves d
 ## Features
 
 - **Import games** from Chess.com and Lichess at the same time (username or profile link), or paste any PGN / FEN
-- **Full game review** — every move graded from **Brilliant (!!)** to **Clown (??)** (plus Miss), powered by **Stockfish 18 NNUE** running on your device (WASM, parallel workers)
+- **Full game review** — every move graded from **Brilliant (!!)** to **Clown (??)** (plus Miss), powered by **Stockfish 19 NNUE** running on your device (WASM, parallel workers)
 - **Accuracy % and estimated Elo** for both players, eval graph, key moments, best & worst moves
 - **Opening names** from the full Lichess opening database (3,865 lines) + deep cached Lichess cloud evals
 - **History** — every review is saved on your device; reopen instantly, track your accuracy trend

@@ -6,3 +6,4 @@ Screenshot_*.png
 node_modules/
 www/
 *.apk
+bench/

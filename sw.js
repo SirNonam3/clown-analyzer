@@ -1,9 +1,9 @@
 /* Clown Analyzer service worker — offline app shell + engine caching. */
-const CACHE = 'clown-analyzer-v2';
+const CACHE = 'clown-analyzer-v3';
 const SHELL = [
   './', './index.html', './config.js', './chess.min.js', './manifest.json', './openings.json', './privacy.html',
   './icon-192.png', './icon-512.png',
-  './stockfish-18-lite-single.js', './stockfish-18-lite-single.wasm',
+  './stockfish-19-lite-single.js', './stockfish-19-lite-single.wasm',
   './sounds/move-self.mp3', './sounds/capture.mp3', './sounds/castle.mp3',
   './sounds/move-check.mp3', './sounds/promote.mp3'
 ];
