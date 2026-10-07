@@ -73,6 +73,9 @@
   @media(min-width:1500px) and (min-height:700px){:root{--pz:1.06}}
   @media(min-width:1800px) and (min-height:860px){:root{--pz:1.12}}
   @media(min-width:2300px) and (min-height:1100px){:root{--pz:1.3}}
+  /* the review results stay at their original size so the summary fits on screen */
+  #tab-review{zoom:calc(1 / var(--pz))}
+  #tab-review:has(#reviewList:not(:empty)) > p{display:none} /* hint only until a game is scanned */
   /* stack on narrow screens */
   @media(max-width:980px){
     .wrap{flex-direction:column;align-items:center}
