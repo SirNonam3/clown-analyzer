@@ -1,4 +1,6 @@
-# 🤡 Clown Analyzer
+<img src="logo.svg" alt="Clown Analyzer logo" width="120" align="right">
+
+# Clown Analyzer
 
 Free chess game analysis — on the web, Android and iOS. How many Clown moves did you play?
 
@@ -34,6 +36,9 @@ http://localhost:8777.
 
 Apps: `npm install` then `npm run sync`; every `git push` builds an Android APK and the iOS app on
 GitHub Actions (see `STORES.md`).
+
+Logo: `logo.svg` is the master. After editing it, `npm run assets` regenerates every web, Android and
+iOS icon and splash screen (other logo options live in `branding/`).
 
 ## Credits
 
