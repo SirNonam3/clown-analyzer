@@ -1,0 +1,29 @@
+{
+  "name": "clown-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free chess game review — web, Android and iOS (Capacitor)",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "sync": "node scripts/build-www.mjs && npx cap sync",
+    "assets": "node scripts/make-app-assets.mjs && npx @capacitor/assets generate --android --ios --iconBackgroundColor #0d0f1a --iconBackgroundColorDark #0d0f1a --splashBackgroundColor #0d0f1a --splashBackgroundColorDark #0d0f1a",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.2.1",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/share": "^8.0.3",
+    "@revenuecat/purchases-capacitor": "^13.7.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.3",
+    "esbuild": "^0.28.2"
+  }
+}

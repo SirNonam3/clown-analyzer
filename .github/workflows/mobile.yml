@@ -1,0 +1,115 @@
+name: Mobile apps (Android + iOS)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android — build APK + emulator smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install JS dependencies
+        run: npm ci
+      - name: Build web bundle and sync into the Android project
+        run: npm run build && npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: clown-analyzer-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      # --- launch it on a real Android emulator and record what happens ---
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run on emulator (API 34)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -n io.github.sirnonam3.clownanalyzer/.MainActivity
+            sleep 75
+            adb exec-out screencap -p > android-screenshot.png
+            adb logcat -d > android-logcat.txt || true
+            grep -E "Capacitor/Console|chromium|AndroidRuntime" android-logcat.txt | tail -80 || true
+      - name: Check the app started the engine
+        run: |
+          grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]" android-logcat.txt | tail -20
+          grep -q "Engine ready" android-logcat.txt
+      - name: Upload smoke-test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-smoke-test
+          path: |
+            android-screenshot.png
+            android-logcat.txt
+
+  ios:
+    name: iOS — simulator build + smoke test
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install JS dependencies
+        run: npm ci
+      - name: Build web bundle and sync into the iOS project
+        run: npm run build && npx cap sync ios
+      - name: Build for iOS Simulator (unsigned)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -30
+          test -d build/Build/Products/Debug-iphonesimulator/App.app
+      - name: Launch in an iPhone simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in d for x in d[r] if 'iPhone' in x['name']))")
+          echo "Simulator: $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch --console-pty "$UDID" io.github.sirnonam3.clownanalyzer > ios-console.txt 2>&1 &
+          sleep 75
+          xcrun simctl io "$UDID" screenshot ios-screenshot.png
+          kill %1 || true
+          grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|error|Error" ios-console.txt | tail -40 || true
+      - name: Check the app started the engine
+        run: grep -q "Engine ready" ios-console.txt
+      - name: Upload smoke-test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-smoke-test
+          path: |
+            ios-screenshot.png
+            ios-console.txt

@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.sirnonam3.clownanalyzer",
+  "appName": "Clown Analyzer",
+  "webDir": "www",
+  "backgroundColor": "#0d0f1a",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0d0f1a"
+  }
+}

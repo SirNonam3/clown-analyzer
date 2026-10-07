@@ -652,7 +652,7 @@ function pump(){
   engine.postMessage('go depth '+current.depth);
   armWatchdog();
 }
-function setStatus(s){document.getElementById('engineStatus').textContent=s;}
+function setStatus(s){document.getElementById('engineStatus').textContent=s; console.log('[status] '+s);}
 
 /* ---------- Move sounds (synthesized wooden clicks, no files) ---------- */
 let audioCtx=null, noiseBuf=null;
@@ -1021,6 +1021,7 @@ function triggerAnalysis(){
   },(bm,m)=>{
     showEval(m,turn);
     document.getElementById('depthText').textContent='(final d'+(m.depth||'')+')';
+    console.log('[analysis] best '+document.getElementById('bestText').textContent+' depth '+(m.depth||'?'));
     const afterEvW=toW(sv(m));
     if(liveAnal&&liveAnal.fen===fen)liveAnal.evW=afterEvW;
     // judge the move the user just tried, now that its position is fully analyzed

@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clown Analyzer</string>
+    <string name="title_activity_main">Clown Analyzer</string>
+    <string name="package_name">io.github.sirnonam3.clownanalyzer</string>
+    <string name="custom_url_scheme">io.github.sirnonam3.clownanalyzer</string>
+    <!-- AdMob: Google's TEST app id. Replace with your real AdMob Android app id before release. -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>
