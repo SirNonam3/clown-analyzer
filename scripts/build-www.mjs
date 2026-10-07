@@ -24,6 +24,7 @@ for (const f of FILES) {
   cpSync(join(root, f), join(out, f));
 }
 cpSync(join(root, 'sounds'), join(out, 'sounds'), { recursive: true });
+cpSync(join(root, 'puzzles'), join(out, 'puzzles'), { recursive: true }); // offline puzzle set (npm run puzzles)
 
 // native bridge → one IIFE bundle (Capacitor core + plugins)
 await build({

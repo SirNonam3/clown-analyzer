@@ -287,6 +287,29 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .hist-views button:hover{color:var(--text)}
 .hist-views button.active{background:var(--panel);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
 .hist-views button[data-hv="fav"].active{color:#f5c84e}
+/* puzzles */
+.pz-stats{display:flex;gap:8px;margin-bottom:10px}
+.pz-stat{flex:1;background:linear-gradient(135deg,#1d2138,#181c2e);border:1px solid var(--border);border-radius:12px;
+  padding:8px 6px;text-align:center}
+.pz-num{font-size:22px;font-weight:800;line-height:1.1}
+.pz-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.pz-num.up{color:var(--good)} .pz-num.down{color:var(--bad)}
+#pzNext{margin-top:10px}
+.pz-result{margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--panel2)}
+.pz-result.win{border-color:#4ade8066} .pz-result.loss{border-color:#f0647c66}
+.pz-result a{color:var(--accent)}
+.pz-res-head{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pz-delta{font-size:13px;padding:1px 8px;border-radius:999px;background:#0003}
+.pz-delta.up{color:var(--good)} .pz-delta.down{color:var(--bad)}
+.pz-line{font-size:13px;margin:8px 0 2px;font-weight:600}
+.pz-line .san{white-space:nowrap}
+.pz-explain{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+.pz-ex-title{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.pz-theme{font-size:12.5px;margin:4px 0;line-height:1.45}
+.pz-theme b{color:var(--accent)}
+.pz-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.pz-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--muted)}
+.pz-more{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
 /* premium */
 .donate.premium{border:none;cursor:pointer;font-family:inherit}
 .modal{position:fixed;inset:0;z-index:200;background:rgba(5,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
@@ -414,18 +437,33 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 
     <!-- PUZZLES -->
     <div class="tabpane" id="tab-puzzles">
-      <p class="small">Find the best move. Generate puzzles from your own analyzed games, or try the Lichess daily.</p>
-      <div class="row">
-        <button class="btn" id="pzFromGame">🧩 From my game</button>
-        <button class="btn sec" id="pzDaily">♟ Lichess daily</button>
+      <div class="pz-stats">
+        <div class="pz-stat"><div class="pz-num" id="pzRating">1500</div><div class="pz-lbl">Puzzle rating</div></div>
+        <div class="pz-stat"><div class="pz-num" id="pzStreak">0</div><div class="pz-lbl">🔥 Streak</div></div>
+        <div class="pz-stat"><div class="pz-num" id="pzScore">–</div><div class="pz-lbl">Solved</div></div>
       </div>
+      <div class="row">
+        <label class="small">Theme <select id="pzTheme"></select></label>
+        <label class="small">Difficulty
+          <select id="pzDiff"><option value="-300">Easier</option><option value="0" selected>Normal</option><option value="300">Harder</option></select>
+        </label>
+      </div>
+      <button class="btn" id="pzNext" style="width:100%">▶ Start puzzles</button>
       <div id="pzStatus" class="small" style="margin-top:10px;font-weight:600"></div>
       <div class="row" id="pzControls" style="display:none;margin-top:10px">
-        <button class="btn sec" id="pzHint">💡 Hint</button>
+        <button class="btn sec" id="pzHint" title="Using a hint counts as a miss for your rating">💡 Hint</button>
         <button class="btn sec" id="pzSolution">Show solution</button>
         <button class="btn sec" id="pzExit">Exit puzzle</button>
       </div>
-      <div class="moves" id="pzList" style="max-height:none;overflow:visible;margin-top:10px"></div>
+      <div id="pzResult"></div>
+      <div class="pz-more">
+        <div class="small" style="margin-bottom:6px">Unrated: practise the mistakes from your own analyzed games, or today's Lichess puzzle.</div>
+        <div class="row">
+          <button class="btn sec" id="pzFromGame">🧩 From my game</button>
+          <button class="btn sec" id="pzDaily">♟ Lichess daily</button>
+        </div>
+        <div class="moves" id="pzList" style="max-height:none;overflow:visible;margin-top:8px"></div>
+      </div>
     </div>
 
     <!-- HISTORY -->
@@ -467,6 +505,7 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
   · <a href="https://github.com/jhlywa/chess.js" target="_blank" rel="noopener">chess.js</a>
   · Game data via Chess.com &amp; Lichess public APIs
   · Openings: <a href="https://github.com/lichess-org/chess-openings" target="_blank" rel="noopener">lichess chess-openings</a> (CC0)
+  · Puzzles: <a href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener">Lichess puzzle database</a> (CC0)
   · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
   <span id="adPrivacyWrap" style="display:none">· <a href="#" id="adPrivacy">Ad privacy choices</a></span>
 </footer>
@@ -1130,83 +1169,350 @@ function clearJudge(){
   const jt=document.getElementById('judgeText'); if(jt)jt.textContent='';
 }
 
-/* ---------- Puzzles ---------- */
+/* ---------- Puzzles ----------
+   Rated trainer: ~50k puzzles from the Lichess puzzle database (CC0) in puzzles/b<band>.json (one file per
+   100 rating points, loaded on demand); the Lichess API tops it up when a theme runs dry (online only).
+   Every puzzle carries Lichess theme tags — PZ_THEMES turns them into the "why it works" explanation. */
+const PZ_VER='1';
+const PZ_THEMES={ // tag → [name, explanation]
+  advancedPawn:['Advanced pawn','A pawn deep in enemy territory is the key — it threatens to promote or ties the defence down.'],
+  anastasiaMate:["Anastasia's mate",'A knight and a rook or queen trap the king on the edge of the board, boxed in by its own piece.'],
+  arabianMate:['Arabian mate','A knight and a rook team up to mate the king in a corner.'],
+  attackingF2F7:['Attack on f2/f7','The weakest square next to the uncastled king — at the start only the king defends it.'],
+  attraction:['Attraction','A sacrifice lures an enemy piece (often the king) onto a square where a tactic hits it.'],
+  backRankMate:['Back-rank mate','The king is stuck behind its own pawns, so a rook or queen on the back rank mates.'],
+  bodenMate:["Boden's mate",'Two bishops on crossing diagonals mate a king blocked in by its own pieces.'],
+  capturingDefender:['Remove the defender','Capture or chase away the piece that guards something — then take what it was protecting.'],
+  castling:['Castling','Castling is the strongest move here — it brings the rook into the attack with tempo.'],
+  clearance:['Clearance','Move a piece out of the way, often with a threat, to open a square or line for another piece.'],
+  defensiveMove:['Defensive move','The only good move is a precise defence that avoids losing material or the game.'],
+  deflection:['Deflection','Force a defending piece away from the square or line it has to guard.'],
+  discoveredAttack:['Discovered attack','Moving one piece uncovers an attack by the piece behind it — two threats in one move.'],
+  doubleBishopMate:['Double-bishop mate','Two bishops on neighbouring diagonals deliver mate.'],
+  doubleCheck:['Double check','Two pieces give check at once — the king must move; blocking or capturing cannot stop both.'],
+  dovetailMate:['Dovetail mate','The queen mates a king whose escape squares are blocked by its own pieces.'],
+  enPassant:['En passant','The special en passant pawn capture is the key move.'],
+  exposedKing:['Exposed king','The king has few defenders left and open lines lead to it — your pieces can get in.'],
+  fork:['Fork','One piece attacks two or more targets at once — the opponent can only save one.'],
+  hangingPiece:['Hanging piece','An enemy piece is undefended or under-defended — it can simply be won.'],
+  hookMate:['Hook mate','A rook, knight and pawn combine to mate, with the king\'s own pawn blocking its escape.'],
+  interference:['Interference','Drop a piece between an enemy piece and what it defends, cutting the connection.'],
+  intermezzo:['In-between move','Instead of the expected move (often a recapture), first play a stronger in-between threat.'],
+  kingsideAttack:['Kingside attack','An attack on the king after it castled short.'],
+  queensideAttack:['Queenside attack','An attack on the king after it castled long.'],
+  pin:['Pin','A piece cannot move without exposing a more valuable piece — or the king — behind it.'],
+  promotion:['Promotion','Promoting a pawn, or the threat of it, decides the position.'],
+  quietMove:['Quiet move','The winning move is neither a check nor a capture — it quietly sets up a threat that cannot be met.'],
+  sacrifice:['Sacrifice','Give up material on purpose to get something bigger: mate, more material back or a winning attack.'],
+  skewer:['Skewer','Attack a valuable piece; when it moves away, the piece behind it on the same line falls.'],
+  smotheredMate:['Smothered mate','A knight mates a king that is completely surrounded by its own pieces.'],
+  trappedPiece:['Trapped piece','An enemy piece has no safe squares left — attack it and it is lost.'],
+  underPromotion:['Under-promotion','Promote to a knight, rook or bishop instead of a queen — the queen would not work here.'],
+  xRayAttack:['X-ray','A piece attacks or defends a square through an enemy piece standing on the same line.'],
+  zugzwang:['Zugzwang','The opponent must move, and every move makes their position worse.'],
+  discoveredCheck:['Discovered check','A piece steps away and uncovers check from the piece behind it — and the piece that moved is free to make its own threat.'],
+  balestraMate:['Balestra mate','A bishop gives mate from a distance while the queen covers the king\'s escape squares.'],
+  blindSwineMate:['Blind swine mate','Two rooks on the seventh rank team up to mate the king.'],
+  cornerMate:['Corner mate','The king is trapped in a corner and mated by a rook or queen working with a knight.'],
+  epauletteMate:['Epaulette mate','The king is mated with its own pieces standing on both sides of it, blocking the escape.'],
+  killBoxMate:['Kill box mate','A rook next to the king, backed by the queen, locks the king inside a 3×3 box.'],
+  morphysMate:["Morphy's mate",'A bishop gives mate to a cornered king while a rook cuts off its escape.'],
+  operaMate:['Opera mate','A rook mates on the back rank, protected by a bishop — as in Morphy\'s famous Opera Game.'],
+  pillsburysMate:["Pillsbury's mate",'A rook mates on an open file while a bishop covers the king\'s last escape square.'],
+  swallowstailMate:["Swallow's tail mate",'The queen mates face to face, protected by another piece, with the king\'s own pieces blocking both sides.'],
+  triangleMate:['Triangle mate','Queen and rook stand next to each other near the king and form a mating triangle.'],
+  vukovicMate:['Vuković mate','A rook mates the king on the edge, protected by another piece, while a knight covers the escape.'],
+  collinearMove:['Collinear move'],
+  // phases, lengths and outcomes: shown as tags
+  opening:['Opening'], middlegame:['Middlegame'], endgame:['Endgame'], rookEndgame:['Rook endgame'],
+  bishopEndgame:['Bishop endgame'], knightEndgame:['Knight endgame'], pawnEndgame:['Pawn endgame'],
+  queenEndgame:['Queen endgame'], queenRookEndgame:['Queen & rook endgame'],
+  oneMove:['One move'], short:['2 moves'], long:['3 moves'], veryLong:['4+ moves'],
+  mate:['Checkmate'], mateIn1:['Mate in 1'], mateIn2:['Mate in 2'], mateIn3:['Mate in 3'], mateIn4:['Mate in 4'], mateIn5:['Mate in 5+'],
+  crushing:['Crushing'], advantage:['Advantage'], equality:['Equality']
+};
+const PZ_OUTCOME={mate:'It ends in checkmate.', crushing:'It wins decisively — material or a mating attack.',
+  advantage:'It gains a clear advantage.', equality:'It saves a worse position — you hold the balance.'};
+const PZ_PICK=[ // theme selector: [value, label] — groups start with '#'
+  ['','Mixed — all themes'],
+  ['#','Checkmates'],['mateIn1','Mate in 1'],['mateIn2','Mate in 2'],['mateIn3+','Mate in 3 or more'],
+  ['backRankMate','Back-rank mate'],['smotheredMate','Smothered mate'],
+  ['#','Tactics'],['fork','Fork'],['pin','Pin'],['skewer','Skewer'],['discoveredAttack','Discovered attack'],
+  ['doubleCheck','Double check'],['sacrifice','Sacrifice'],['hangingPiece','Hanging piece'],['trappedPiece','Trapped piece'],
+  ['capturingDefender','Remove the defender'],['deflection','Deflection'],['attraction','Attraction'],
+  ['clearance','Clearance'],['interference','Interference'],['intermezzo','In-between move'],['xRayAttack','X-ray'],
+  ['#','Strategy'],['quietMove','Quiet move'],['defensiveMove','Defensive move'],['zugzwang','Zugzwang'],
+  ['kingsideAttack','Kingside attack'],['exposedKing','Exposed king'],['advancedPawn','Advanced pawn'],['promotion','Promotion'],
+  ['#','Game phase'],['opening','Opening'],['middlegame','Middlegame'],['endgame','Endgame'],
+  ['rookEndgame','Rook endgame'],['pawnEndgame','Pawn endgame']
+];
+(()=>{ // fill the theme <select>
+  const sel=document.getElementById('pzTheme'); let grp=null, html='';
+  for(const [v,l] of PZ_PICK){
+    if(v==='#'){ if(grp)html+='</optgroup>'; html+=`<optgroup label="${l}">`; grp=l; continue; }
+    html+=`<option value="${v}">${l}</option>`;
+  }
+  sel.innerHTML=html+(grp?'</optgroup>':'');
+  try{ const t=localStorage.getItem('pzTheme'), d=localStorage.getItem('pzDiff');
+    if(t!==null&&[...sel.options].some(o=>o.value===t))sel.value=t;
+    if(d!==null&&/^-?\d+$/.test(d))document.getElementById('pzDiff').value=d; }catch(e){}
+  sel.onchange=()=>{ try{localStorage.setItem('pzTheme',sel.value);}catch(e){} };
+  document.getElementById('pzDiff').onchange=e=>{ try{localStorage.setItem('pzDiff',e.target.value);}catch(err){} };
+})();
+function pzThemeMatch(want){
+  if(!want)return ()=>true;
+  if(want==='mateIn3+')return t=>/\bmateIn[345]\b/.test(t);
+  if(want==='endgame')return t=>/[eE]ndgame\b/.test(t);
+  const re=new RegExp('\\b'+want+'\\b'); return t=>re.test(t);
+}
+
+/* your puzzle rating (Elo, fast at first so it finds your level quickly) */
+const PZ_PROFILE='pzProfile_v1', PZ_SEEN='pzSeen_v1';
+function pzProfile(){
+  const d={rating:1500,games:0,streak:0,best:0,solved:0,failed:0};
+  try{ return Object.assign(d,JSON.parse(localStorage.getItem(PZ_PROFILE)||'{}')); }catch(e){ return d; }
+}
+function pzRate(win,puzzleRating){
+  const p=pzProfile();
+  const K=p.games<15?60:p.games<50?32:20;
+  const exp=1/(1+Math.pow(10,(puzzleRating-p.rating)/400));
+  const d=Math.round(K*((win?1:0)-exp));
+  p.rating=Math.max(400,p.rating+d); p.games++;
+  if(win){ p.solved++; p.streak++; p.best=Math.max(p.best,p.streak); } else { p.failed++; p.streak=0; }
+  try{ localStorage.setItem(PZ_PROFILE,JSON.stringify(p)); }catch(e){}
+  pzShowStats(d);
+  return d;
+}
+function pzShowStats(delta){
+  const p=pzProfile();
+  const r=document.getElementById('pzRating');
+  r.textContent=p.rating; r.classList.toggle('up',delta>0); r.classList.toggle('down',delta<0);
+  if(delta)setTimeout(()=>r.classList.remove('up','down'),1600);
+  document.getElementById('pzStreak').textContent=p.streak;
+  document.getElementById('pzScore').textContent=p.games?`${p.solved}/${p.games}`:'–';
+}
+function pzSeen(){ try{ return new Set((localStorage.getItem(PZ_SEEN)||'').split(' ').filter(Boolean)); }catch(e){ return new Set(); } }
+function pzMarkSeen(id){
+  if(!id)return;
+  try{ const l=(localStorage.getItem(PZ_SEEN)||'').split(' ').filter(Boolean); l.push(id);
+    localStorage.setItem(PZ_SEEN,l.slice(-4000).join(' ')); }catch(e){}
+}
+
+/* loading: one rating band at a time */
+const pzShards=new Map();
+function pzShard(b){
+  if(!pzShards.has(b)) pzShards.set(b, fetch(`puzzles/b${b}.json?v=${PZ_VER}`)
+    .then(r=>{ if(!r.ok)throw new Error('HTTP '+r.status); return r.json(); })
+    .catch(e=>{ pzShards.delete(b); throw e; }));
+  return pzShards.get(b);
+}
+async function pzPickLocal(target,match){
+  const seen=pzSeen(), center=Math.min(29,Math.max(4,Math.floor(target/100)));
+  for(let d=0; d<=8; d++){
+    for(const b of d?[center-d,center+d]:[center]){
+      if(b<4||b>29)continue;
+      let rows; try{ rows=await pzShard(b); }catch(e){ continue; }
+      const c=rows.filter(r=>!seen.has(r[0])&&match(r[4]));
+      if(!c.length)continue;
+      c.sort((x,y)=>Math.abs(x[3]-target)-Math.abs(y[3]-target));
+      const pool=c.slice(0,30), r=pool[Math.floor(Math.random()*pool.length)];
+      const mv=r[2].split(' ');
+      return { id:r[0], rating:r[3], themes:r[4].split(' ').filter(Boolean), fenPrev:r[1], introUci:mv[0],
+        solution:mv.slice(1), solverWhite:r[1].split(' ')[1]==='b' };
+    }
+  }
+  return null;
+}
+function pzFromLichessJson(j){ // Lichess API puzzle → our format (pgn ends with the opponent's last move)
+  const moves=j.game.pgn.trim().split(/\s+/);
+  const g=new Chess(); for(const s of moves.slice(0,-1)) if(!g.move(s,{sloppy:true}))throw new Error('pgn parse');
+  const fenPrev=g.fen(); if(!g.move(moves[moves.length-1],{sloppy:true}))throw new Error('pgn parse');
+  return { id:j.puzzle.id, rating:j.puzzle.rating, themes:j.puzzle.themes||[], fenPrev, introSan:moves[moves.length-1],
+    solution:j.puzzle.solution, solverWhite:g.turn()==='w' };
+}
+async function pzPickOnline(want,offset){
+  const angle=want==='mateIn3+'?'mateIn3':(want||'mix');
+  const difficulty=offset<0?'easier':offset>0?'harder':'normal';
+  const r=await fetch(`https://lichess.org/api/puzzle/next?angle=${encodeURIComponent(angle)}&difficulty=${difficulty}`,
+    {headers:{Accept:'application/json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return pzFromLichessJson(await r.json());
+}
+let pzLoading=false;
+async function pzNextRated(){
+  if(pzLoading)return; pzLoading=true;
+  const btn=document.getElementById('pzNext'); btn.disabled=true;
+  pzStatus('Finding a puzzle…');
+  try{
+    const offset=+document.getElementById('pzDiff').value, want=document.getElementById('pzTheme').value;
+    const target=Math.max(400,Math.min(3000,pzProfile().rating+offset));
+    let p=await pzPickLocal(target,pzThemeMatch(want));
+    if(!p){ try{ p=await pzPickOnline(want,offset); }catch(e){} }
+    if(!p){ pzStatus(navigator.onLine===false?'You are offline and no saved puzzles match — try another theme.'
+      :'No puzzle found for this theme — try another one.'); return; }
+    startPuzzle(Object.assign(p,{rated:true, title:'Puzzle'}));
+  } finally { pzLoading=false; btn.disabled=false; }
+}
+document.getElementById('pzNext').onclick=pzNextRated;
+pzShowStats(0);
+
+/* playing a puzzle */
 function pzStatus(s){document.getElementById('pzStatus').textContent=s;}
-function startPuzzle(opts){ // {fenPrev, introSan, fen, solution, solverWhite, title}
-  puzzleReturn={had:!!fullHistory, ply};
-  puzzleMode={solution:opts.solution.slice(), idx:0, solverWhite:opts.solverWhite, solved:false};
+function pzSideText(){ return (puzzleMode.solverWhite?'White':'Black')+' to move'; }
+// opts: {fenPrev + introUci|introSan (opponent's last move, animated) | fen, solution:[uci], solverWhite,
+//        title, rated, id, rating, themes}
+function startPuzzle(opts){
+  if(!puzzleMode||!puzzleReturn) puzzleReturn={had:!!fullHistory, ply}; // keep the way back across "next puzzle"
+  puzzleMode={solution:opts.solution.slice(), idx:0, solverWhite:opts.solverWhite, solved:false,
+    rated:!!opts.rated, id:opts.id||null, rating:opts.rating||null, themes:opts.themes||[], title:opts.title||'Puzzle',
+    rateDone:false, delta:0, failed:false, hints:0, startFen:null};
+  const pm=puzzleMode;
   loadedMode=false; selected=null; clearJudge(); clearArrow();
-  flipped=!opts.solverWhite; // solver plays from the bottom
+  flipped=!opts.solverWhite; paintEvalBar(); // solver plays from the bottom
   document.getElementById('pzControls').style.display='flex';
-  const go=()=>pzStatus((opts.solverWhite?'White':'Black')+' to move — find the best move!');
-  if(opts.fenPrev&&opts.introSan){ // show the opponent's error being played
+  document.getElementById('pzHint').style.display=document.getElementById('pzSolution').style.display='';
+  document.getElementById('pzNext').style.display='none';
+  document.getElementById('pzResult').innerHTML='';
+  pzMarkSeen(pm.id);
+  const go=()=>{ if(puzzleMode!==pm)return; pm.startFen=game.fen();
+    pzStatus(pzSideText()+' — find the best move!'+(pm.rating?` (rated ${pm.rating})`:'')); };
+  if(opts.fenPrev&&(opts.introUci||opts.introSan)){ // show the opponent's last move being played
     game.load(opts.fenPrev); render();
     pzStatus((opts.title||'Puzzle')+' — watch the last move…');
-    setTimeout(()=>{ const mv=game.move(opts.introSan,{sloppy:true}); render();
-      if(mv){sfxFor(mv);animateMoveObj(mv,false);} go(); },600);
+    setTimeout(()=>{ if(puzzleMode!==pm)return;
+      const u=opts.introUci;
+      const mv=u?game.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||undefined}):game.move(opts.introSan,{sloppy:true});
+      render(); if(mv){sfxFor(mv);animateMoveObj(mv,false);} go(); },600);
   } else { game.load(opts.fen); render(); go(); }
 }
+function pzRateOnce(win){ // a rated puzzle changes your rating once: on the first miss, hint or solution — or when solved
+  const pm=puzzleMode;
+  if(!pm||!pm.rated||pm.rateDone)return;
+  pm.rateDone=true; pm.delta=pzRate(win,pm.rating||1500);
+}
 function puzzleTry(mv,noAnim){
+  if(!puzzleMode.startFen)return true; // still showing the opponent's move
+  clearArrow();
   let promo;
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
   const uci=mv.from+mv.to+(promo||'');
   const want=puzzleMode.solution[puzzleMode.idx]||'';
-  const ok = uci===want || (!promo && want.length===4 && uci===want);
+  let ok = uci===want || (!promo && want.length===4 && uci===want), altMate=false;
+  if(!ok){ // any checkmate also solves it (the Lichess rule)
+    const t=new Chess(game.fen()); const tm=t.move({from:mv.from,to:mv.to,promotion:promo||'q'});
+    if(tm&&t.in_checkmate()){ ok=true; altMate=true; }
+  }
   if(!ok){
     selected=null; render();
     const cell=boardEl.querySelector(`[data-sq="${mv.to}"]`);
     if(cell){cell.classList.add('wrong'); setTimeout(()=>cell.classList.remove('wrong'),380);}
-    pzStatus('✗ Not the move — try again');
+    const first=!puzzleMode.failed; puzzleMode.failed=true; pzRateOnce(false);
+    const d=puzzleMode.delta;
+    pzStatus('✗ Not the move'+(first&&puzzleMode.rated&&d?` (${d} rating)`:'')+' — try again, or show the solution.');
     if(window.NativeBridge)NativeBridge.haptic('error');
     return true;
   }
   const made=game.move({from:mv.from,to:mv.to,promotion:promo||'q'});
   sfxFor(made); selected=null; puzzleMode.idx++;
   render(); if(!noAnim)animateMoveObj(made,false);
-  if(puzzleMode.idx>=puzzleMode.solution.length){ puzzleSolved(); return true; }
+  if(altMate||puzzleMode.idx>=puzzleMode.solution.length){ puzzleSolved(); return true; }
   pzStatus('✓ Correct — keep going!');
+  const pm=puzzleMode;
   setTimeout(()=>{ // opponent's forced reply
-    if(!puzzleMode)return;
-    const r=puzzleMode.solution[puzzleMode.idx++];
+    if(puzzleMode!==pm)return;
+    const r=pm.solution[pm.idx++];
     const rm=game.move({from:r.slice(0,2),to:r.slice(2,4),promotion:r.slice(4)||'q'});
     if(rm){ sfxFor(rm); render(); animateMoveObj(rm,false); }
-    if(puzzleMode.idx>=puzzleMode.solution.length) puzzleSolved();
-    else pzStatus((puzzleMode.solverWhite?'White':'Black')+' to move — continue!');
+    if(pm.idx>=pm.solution.length) puzzleSolved();
+    else pzStatus(pzSideText()+' — continue!');
   },520);
   return true;
 }
 function puzzleSolved(){
   puzzleMode.solved=true;
-  pzStatus('🎉 Solved! Nice find.');
+  const clean=!puzzleMode.failed&&!puzzleMode.hints;
+  pzRateOnce(clean);
+  pzStatus(clean?'🎉 Solved! Nice find.':'✓ Solved — but it does not count as clean.');
   sfx('promote');
   if(window.NativeBridge)NativeBridge.haptic('success');
+  pzShowResult(clean?'win':'loss');
   triggerAnalysis(); // analysis allowed again — explore freely
 }
+function pzSanLine(fen,ucis){ // "23…Qxf2+ 24.Kh1 Qf1+" from a start position
+  const g=new Chess(fen); let n=+fen.split(' ')[5]||1, out=[];
+  ucis.forEach((u,k)=>{
+    const white=g.turn()==='w';
+    const m=g.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||'q'}); if(!m)return;
+    out.push(`<span class="san">${white?n+'.':(k===0?n+'…':'')}${m.san}</span>`);
+    if(!white)n++;
+  });
+  return out.join(' ');
+}
+function pzExplainHtml(themes){
+  const motifs=themes.filter(t=>PZ_THEMES[t]&&PZ_THEMES[t][1]);
+  const mateN=themes.find(t=>/^mateIn\d$/.test(t));
+  const outcome=mateN?`Checkmate in ${mateN.slice(6)} move${mateN.slice(6)==='1'?'':'s'}.`
+    :(themes.map(t=>PZ_OUTCOME[t]).find(Boolean)||'');
+  const lines=motifs.map(t=>`<div class="pz-theme"><b>${PZ_THEMES[t][0]}</b> — ${PZ_THEMES[t][1]}</div>`);
+  if(!lines.length) lines.push('<div class="pz-theme">Look at every check, capture and threat first — the winning move uses the one the opponent cannot answer.</div>');
+  const tags=themes.filter(t=>PZ_THEMES[t]&&!PZ_THEMES[t][1]&&!PZ_OUTCOME[t]&&!/^mateIn/.test(t)).map(t=>`<span class="pz-tag">${PZ_THEMES[t][0]}</span>`).join('');
+  return `<div class="pz-explain"><div class="pz-ex-title">WHY IT WORKS</div>${lines.join('')}
+    ${outcome?`<div class="pz-theme" style="color:var(--muted)">${outcome}</div>`:''}
+    ${tags?`<div class="pz-tags">${tags}</div>`:''}</div>`;
+}
+function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
+  const pm=puzzleMode; if(!pm)return;
+  const p=pzProfile();
+  let head;
+  if(kind==='win') head='🎉 Solved!';
+  else if(kind==='shown') head='📖 Solution';
+  else head=pm.hints&&!pm.failed?'✓ Solved with a hint':'✓ Solved after a miss';
+  const delta=pm.rated&&pm.rateDone?`<span class="pz-delta ${pm.delta>=0?'up':'down'}">${pm.delta>=0?'+':''}${pm.delta}</span>
+    <span class="small">rating ${p.rating}</span>`:'';
+  const src=pm.id?` · <a href="https://lichess.org/training/${pm.id}" target="_blank" rel="noopener">#${pm.id} on Lichess ↗</a>`:'';
+  const info=(pm.rating?`Puzzle rated ${pm.rating}`:esc(pm.title))+src;
+  document.getElementById('pzResult').innerHTML=`<div class="pz-result ${kind==='win'?'win':'loss'}">
+    <div class="pz-res-head">${head} ${delta}</div>
+    <div class="small" style="margin-top:2px">${info}</div>
+    ${pm.startFen?`<div class="pz-line">${pzSanLine(pm.startFen,pm.solution)}</div>`:''}
+    ${pzExplainHtml(pm.themes)}</div>`;
+  const nb=document.getElementById('pzNext');
+  nb.textContent='Next puzzle ▶'; nb.style.display='';
+  document.getElementById('pzHint').style.display=document.getElementById('pzSolution').style.display='none';
+}
 document.getElementById('pzHint').onclick=()=>{
-  if(!puzzleMode||puzzleMode.solved)return;
+  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen)return;
   const want=puzzleMode.solution[puzzleMode.idx]; if(!want)return;
-  const cell=boardEl.querySelector(`[data-sq="${want.slice(0,2)}"]`);
-  if(cell){cell.classList.add('sel'); setTimeout(()=>{cell.classList.remove('sel');},800);}
-  pzStatus('💡 Look at the highlighted piece.');
+  puzzleMode.hints++; pzRateOnce(false);
+  if(puzzleMode.hints===1){ // 1st hint: which piece · 2nd: the move itself
+    const cell=boardEl.querySelector(`[data-sq="${want.slice(0,2)}"]`);
+    if(cell){cell.classList.add('sel'); setTimeout(()=>{cell.classList.remove('sel');},900);}
+    pzStatus('💡 Move the highlighted piece. (Tap Hint again to see the move.)');
+  } else { drawArrow(want); pzStatus('💡 Play the arrow move.'); }
 };
 document.getElementById('pzSolution').onclick=()=>{
-  if(!puzzleMode||puzzleMode.solved)return;
-  puzzleMode.solved=true;
-  const rest=puzzleMode.solution.slice(puzzleMode.idx);
+  if(!puzzleMode||puzzleMode.solved||!puzzleMode.startFen)return;
+  pzRateOnce(false);
+  const pm=puzzleMode; pm.solved=true;
+  const rest=pm.solution.slice(pm.idx);
   let t=0;
-  rest.forEach(u=>{ t+=620; setTimeout(()=>{
+  rest.forEach(u=>{ t+=620; setTimeout(()=>{ if(puzzleMode!==pm)return;
     const m=game.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||'q'});
     if(m){sfxFor(m);render();animateMoveObj(m,false);}
   },t); });
-  setTimeout(()=>{ pzStatus('Solution shown.'); triggerAnalysis(); },t+400);
+  setTimeout(()=>{ if(puzzleMode!==pm)return; pzStatus('Solution shown — study it on the board, then try the next one.');
+    pzShowResult('shown'); triggerAnalysis(); },t+400);
 };
 document.getElementById('pzExit').onclick=()=>{
   if(!puzzleMode)return;
   puzzleMode=null;
   document.getElementById('pzControls').style.display='none';
-  pzStatus('');
+  document.getElementById('pzResult').innerHTML='';
+  const nb=document.getElementById('pzNext'); nb.textContent='▶ Start puzzles'; nb.style.display='';
+  pzStatus(''); clearArrow();
   if(puzzleReturn&&puzzleReturn.had) gotoPly(puzzleReturn.ply);
   else document.getElementById('newGame').click();
+  puzzleReturn=null;
 };
 document.getElementById('pzFromGame').onclick=()=>{
   const list=document.getElementById('pzList');
@@ -1221,7 +1527,8 @@ document.getElementById('pzFromGame').onclick=()=>{
     el.onmouseleave=()=>el.style.background='';
     el.onclick=()=>{ const c=puzzleCands[+el.dataset.k];
       startPuzzle({fenPrev:c.fenPrev, introSan:c.introSan, fen:c.fen, solution:[c.best],
-        solverWhite:c.solverWhite, title:'Your game'}); };
+        solverWhite:c.solverWhite, title:`Your game · move ${Math.floor(c.i/2)+1}`, rated:false,
+        themes:[]}); };
   });
 };
 document.getElementById('pzDaily').onclick=async()=>{
@@ -1229,15 +1536,7 @@ document.getElementById('pzDaily').onclick=async()=>{
   try{
     const r=await fetch('https://lichess.org/api/puzzle/daily');
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    const moves=j.game.pgn.trim().split(/\s+/);
-    const g=new Chess();
-    for(const s of moves){ if(!g.move(s,{sloppy:true}))throw new Error('pgn parse'); }
-    const g2=new Chess();
-    for(const s of moves.slice(0,-1)) g2.move(s,{sloppy:true});
-    startPuzzle({fenPrev:g2.fen(), introSan:moves[moves.length-1], fen:g.fen(),
-      solution:j.puzzle.solution, solverWhite:g.turn()==='w',
-      title:'Lichess daily · rating '+j.puzzle.rating});
+    startPuzzle(Object.assign(pzFromLichessJson(await r.json()),{rated:false, title:'Lichess daily'}));
   }catch(e){ pzStatus('Could not load the daily puzzle ('+e.message+').'); }
 };
 function showEval(m,turn){
