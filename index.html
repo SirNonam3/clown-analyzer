@@ -210,6 +210,56 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 .credits{text-align:center;color:var(--muted);font-size:11px;padding:16px 0 22px}
 .credits a{color:var(--muted)}
 .credits a:hover{color:var(--accent)}
+/* tabs with icons */
+.tabs button{display:flex;align-items:center;justify-content:center;gap:6px}
+.tabs .ti{font-size:14px;line-height:1}
+/* safe areas (phone notches / home indicator) */
+header{padding-top:max(12px,env(safe-area-inset-top));padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
+/* phones: tabs become a fixed bottom navigation bar */
+@media(max-width:640px){
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;border-radius:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+        background:rgba(18,20,34,.96);backdrop-filter:blur(10px);border-top:1px solid var(--border);gap:2px}
+  .tabs button{flex-direction:column;gap:2px;padding:6px 2px;font-size:10px;border-radius:10px}
+  .tabs .ti{font-size:18px}
+  .tabs button.active{box-shadow:none}
+  header{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));gap:8px}
+  header h1{font-size:16px}
+  header .status{display:none}
+  .wrap{padding:10px}
+  /* board fills the width: 100vw − page padding (20) − eval bar (20) − gap (8) */
+  .left{--bsize:min(calc(100vw - 52px), 70vh);gap:8px}
+  #evalbar{width:20px}
+  #evaltext{font-size:8px;padding:1px 2px}
+  .panel{padding:12px}
+  .credits{padding-bottom:16px}
+}
+/* collapsible sections */
+details.more{margin-top:12px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+details.more summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--text)}
+details.more[open] summary{margin-bottom:8px}
+/* history */
+.hist-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--panel2);
+  border:1px solid var(--border);margin-bottom:6px;cursor:pointer}
+.hist-item:hover{border-color:var(--accent)}
+.hist-main{flex:1;min-width:0}
+.hist-title{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-acc{font-weight:800;font-size:13px;text-align:right;white-space:nowrap}
+.hist-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+.hist-del:hover{color:var(--bad)}
+/* premium */
+.donate.premium{border:none;cursor:pointer;font-family:inherit}
+.modal{position:fixed;inset:0;z-index:200;background:rgba(5,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
+.modal[hidden]{display:none}
+.sheet{background:var(--panel);border:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:440px;
+  padding:20px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px #000a}
+@media(min-width:641px){.modal{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{margin:0 0 10px;font-size:19px}
+.pw-list{margin:0 0 12px;padding-left:20px;font-size:14px;line-height:1.7}
+.pw-pkg{width:100%;margin:6px 0 0;font-size:15px}
+.pw-legal{font-size:10.5px;line-height:1.5;margin-top:12px}
+.pw-legal a{color:var(--muted)}
 /* scrollbars */
 *::-webkit-scrollbar{width:10px;height:10px}
 *::-webkit-scrollbar-thumb{background:#2b3049;border-radius:8px;border:2px solid #12141f}
@@ -220,7 +270,8 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 <header>
   <h1><span class="logo-emoji">🤡</span> <span class="logo-text">Clown Analyzer</span></h1>
   <span class="status" id="engineStatus">Loading engine…</span>
-  <a class="donate" href="https://ko-fi.com/YOUR_USERNAME" target="_blank" rel="noopener" title="Support the site">☕ Support</a>
+  <a class="donate" id="supportLink" href="#" target="_blank" rel="noopener" title="Support the site" style="display:none">☕ Support</a>
+  <button class="donate premium" id="premiumBtn" style="display:none">⭐ Go ad-free</button>
 </header>
 
 <div class="wrap">
@@ -235,14 +286,13 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
   </div>
 
   <div class="panel">
-    <div class="tabs">
-      <button data-tab="play" class="active">Play</button>
-      <button data-tab="chesscom">Import</button>
-      <button data-tab="pgn">PGN</button>
-      <button data-tab="fen">FEN</button>
-      <button data-tab="review">Review</button>
-      <button data-tab="puzzles">Puzzles</button>
-    </div>
+    <nav class="tabs">
+      <button data-tab="play" class="active"><span class="ti">♟</span><span class="tl">Play</span></button>
+      <button data-tab="chesscom"><span class="ti">⇩</span><span class="tl">Import</span></button>
+      <button data-tab="review"><span class="ti">📊</span><span class="tl">Review</span></button>
+      <button data-tab="puzzles"><span class="ti">🧩</span><span class="tl">Puzzles</span></button>
+      <button data-tab="history"><span class="ti">🕘</span><span class="tl">History</span></button>
+    </nav>
 
     <!-- analysis (always visible) -->
     <div class="bestmove" id="analysisBox">
@@ -271,9 +321,10 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 
     <!-- PLAY -->
     <div class="tabpane active" id="tab-play">
-      <p class="small">Click a piece, then click its destination. The engine analyzes each position automatically.</p>
+      <p class="small">Drag a piece or tap it then its destination. Every move you try gets judged by the engine.</p>
       <button class="btn sec" id="newGame">New game</button>
       <button class="btn sec" id="undoMove">Undo</button>
+      <div class="moves" id="moveList"></div>
     </div>
 
     <!-- IMPORT -->
@@ -291,28 +342,24 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       </div>
       <div class="small" id="ccStatus" style="margin-top:8px"></div>
       <div class="moves" id="ccList" style="max-height:340px;margin-top:8px"></div>
-    </div>
 
-    <!-- PGN -->
-    <div class="tabpane" id="tab-pgn">
-      <label class="fld">Paste PGN</label>
-      <textarea id="pgnInput" placeholder="1. e4 e5 2. Nf3 Nc6 ..."></textarea>
-      <button class="btn" id="loadPgn">Load game</button>
-      <div class="moves" id="moveList"></div>
-    </div>
-
-    <!-- FEN -->
-    <div class="tabpane" id="tab-fen">
-      <label class="fld">FEN string</label>
-      <input type="text" id="fenInput" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
-      <button class="btn" id="loadFen">Load position</button>
-      <button class="btn sec" id="copyFen">Copy current FEN</button>
-      <div class="small" id="fenOut" style="margin-top:8px;word-break:break-all"></div>
+      <details class="more">
+        <summary>Paste a PGN</summary>
+        <textarea id="pgnInput" placeholder="1. e4 e5 2. Nf3 Nc6 ..."></textarea>
+        <button class="btn" id="loadPgn">Load game</button>
+      </details>
+      <details class="more">
+        <summary>Set up a position (FEN)</summary>
+        <input type="text" id="fenInput" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+        <button class="btn" id="loadFen">Load position</button>
+        <button class="btn sec" id="copyFen">Copy current FEN</button>
+        <div class="small" id="fenOut" style="margin-top:8px;word-break:break-all"></div>
+      </details>
     </div>
 
     <!-- REVIEW -->
     <div class="tabpane" id="tab-review">
-      <p class="small">Load a game from the <b>Import</b> or <b>PGN</b> tab first, then scan it. Each move gets a quality badge (shown on the board too).</p>
+      <p class="small">Load a game from the <b>Import</b> tab first, then scan it. Each move gets a quality badge (shown on the board too).</p>
       <label class="small">Scan depth
         <select id="reviewDepth"><option value="14">14 (fast)</option><option value="16" selected>16 (balanced)</option><option value="20">20 (deep)</option><option value="25">25 (max)</option></select>
       </label>
@@ -336,6 +383,34 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
       </div>
       <div class="moves" id="pzList" style="max-height:none;overflow:visible;margin-top:10px"></div>
     </div>
+
+    <!-- HISTORY -->
+    <div class="tabpane" id="tab-history">
+      <p class="small">Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan.</p>
+      <div id="histStats" class="small" style="margin:6px 0 8px"></div>
+      <div id="histList"></div>
+      <button class="btn sec" id="histClear" style="display:none;margin-top:10px">Clear history</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREMIUM PAYWALL (store apps only) -->
+<div id="paywall" class="modal" hidden>
+  <div class="sheet">
+    <h2>⭐ Clown Analyzer Premium</h2>
+    <ul class="pw-list">
+      <li>No ads after your game reviews</li>
+      <li>Supports development of new features</li>
+    </ul>
+    <div id="pwPackages"></div>
+    <div id="pwMsg" class="small" style="margin:8px 0;min-height:1em"></div>
+    <button class="btn sec" id="pwRestore" style="width:100%">Restore purchases</button>
+    <button class="btn sec" id="pwClose" style="width:100%">Not now</button>
+    <p class="small pw-legal">Payment is charged to your App Store / Google Play account. The subscription
+      renews automatically unless cancelled at least 24 hours before the end of the period; manage or
+      cancel it in your store account settings.
+      <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> ·
+      <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener">Terms of Use</a></p>
   </div>
 </div>
 
@@ -343,8 +418,11 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
   Engine: <a href="https://github.com/nmrugg/stockfish.js" target="_blank" rel="noopener">Stockfish.js</a> (GPL)
   · <a href="https://github.com/jhlywa/chess.js" target="_blank" rel="noopener">chess.js</a>
   · Game data via Chess.com &amp; Lichess public APIs
+  · Openings: <a href="https://github.com/lichess-org/chess-openings" target="_blank" rel="noopener">lichess chess-openings</a> (CC0)
+  · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
 </footer>
 
+<script src="config.js"></script>
 <script src="chess.min.js"></script>
 <script>
 /* ---------- Engine (Stockfish via cross-origin worker) ---------- */
@@ -355,7 +433,10 @@ let current=null;
 const SF_URL='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 /* Engine preference: Stockfish 18 NNUE (local wasm) → Stockfish 10 (local wasm)
    → CDN asm.js blob worker (file:// where local workers are blocked). */
-let SF_MODE=(location.protocol==='http:'||location.protocol==='https:')?'nnue-local':'asm-cdn';
+// http(s) on the web, https://localhost on Android and capacitor:// on iOS all serve the
+// local engine files; only file:// blocks local workers.
+let SF_MODE=(location.protocol==='file:')?'asm-cdn':'nnue-local';
+const IS_NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 function makeSF(){
   if(SF_MODE==='nnue-local'){
     try{ return new Worker('stockfish-18-lite-single.js'); }catch(e){ SF_MODE='wasm-local'; }
@@ -399,35 +480,60 @@ function recoverEngine(){
 }
 
 /* ---------- Lichess cloud eval (deep cached evals for book positions) ---------- */
-/* Returns {ev, bm, second, depth} in White-POV cp, or null if not cached/unreachable. */
+/* Polite client: results (hits AND misses) are cached on-device, a 429 pauses all cloud
+   calls for a while, and prefetch stops once positions leave the cloud's known theory. */
+const CLOUD_CACHE_KEY='cloudEvalCache_v1', CLOUD_CACHE_MAX=3000;
+let cloudCache=null, cloudBlockedUntil=0, cloudSaveTimer=null;
+function cloudKey(fen){ return fen.split(' ').slice(0,4).join(' '); } // ignore move clocks
+function loadCloudCache(){
+  if(cloudCache)return cloudCache;
+  try{ cloudCache=new Map(JSON.parse(localStorage.getItem(CLOUD_CACHE_KEY)||'[]')); }catch(e){ cloudCache=new Map(); }
+  return cloudCache;
+}
+function saveCloudCache(){
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>{
+    try{
+      const arr=[...cloudCache]; // insertion order ≈ age; keep the newest
+      localStorage.setItem(CLOUD_CACHE_KEY,JSON.stringify(arr.slice(-CLOUD_CACHE_MAX)));
+    }catch(e){}
+  },500);
+}
+/* Returns {ev, bm, second, depth} in White-POV cp, or null if not in the cloud / unreachable. */
 async function cloudEval(fen, timeoutMs){
+  const cache=loadCloudCache(), key=cloudKey(fen);
+  if(cache.has(key)) return cache.get(key);           // cached hit, or cached miss (null)
+  if(Date.now()<cloudBlockedUntil) return null;        // backing off after a 429
   const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),timeoutMs||2000);
   try{
     const r=await fetch('https://lichess.org/api/cloud-eval?multiPv=2&fen='+encodeURIComponent(fen),{signal:ctl.signal});
+    if(r.status===429){ cloudBlockedUntil=Date.now()+90000; return null; }
+    if(r.status===404){ cache.set(key,null); saveCloudCache(); return null; }
     if(!r.ok) return null;
     const j=await r.json();
-    if(!j.pvs||!j.pvs.length) return null;
+    if(!j.pvs||!j.pvs.length){ cache.set(key,null); saveCloudCache(); return null; }
     const val=pv=> pv.mate!==undefined ? (pv.mate>0?100000:-100000) : (pv.cp|0);
     const norm=u=>({e1h1:'e1g1',e1a1:'e1c1',e8h8:'e8g8',e8a8:'e8c8'}[u]||u); // lichess castling notation
     const bm=norm((j.pvs[0].moves||'').split(' ')[0]||'');
-    return { ev:val(j.pvs[0]), bm:bm||null, second:j.pvs[1]!==undefined?val(j.pvs[1]):null, depth:j.depth };
+    const res={ ev:val(j.pvs[0]), bm:bm||null, second:j.pvs[1]!==undefined?val(j.pvs[1]):null, depth:j.depth };
+    cache.set(key,res); saveCloudCache();
+    return res;
   }catch(e){ return null; }
   finally{ clearTimeout(t); }
 }
-/* Fetch cloud evals for the first `count` positions; resolves with sparse array. */
+/* Fetch cloud evals for the opening positions in small ordered batches; stops after the
+   game leaves known theory (a whole batch of misses). Resolves with a sparse array. */
 async function cloudPrefetch(fens, count, deadlineMs){
   const n=Math.min(count,fens.length);
   const out=new Array(fens.length);
-  const CONC=5; let idx=0;
-  const deadline=Date.now()+deadlineMs;
-  async function lane(){
-    while(idx<n && Date.now()<deadline){
-      const i=idx++;
-      const r=await cloudEval(fens[i], Math.min(2000, Math.max(300, deadline-Date.now())));
-      if(r)out[i]=r;
-    }
+  const BATCH=3, deadline=Date.now()+deadlineMs;
+  for(let s=0;s<n && Date.now()<deadline;s+=BATCH){
+    const idxs=[]; for(let i=s;i<Math.min(n,s+BATCH);i++)idxs.push(i);
+    const rs=await Promise.all(idxs.map(i=>cloudEval(fens[i], Math.min(2000, Math.max(300, deadline-Date.now())))));
+    let hits=0;
+    rs.forEach((r,k)=>{ if(r){ out[idxs[k]]=r; hits++; } });
+    if(!hits) break; // out of book — deeper positions won't be cached either
   }
-  await Promise.all(Array.from({length:CONC},lane));
   return out;
 }
 
@@ -790,6 +896,7 @@ function tryMove(from,to,noAnim){
   if(mv.flags.includes('p')){promo=(prompt('Promote to (q,r,b,n)?','q')||'q').toLowerCase();}
   const made=game.move({from,to,promotion:promo||'q'});
   sfxFor(made);
+  if(window.NativeBridge)NativeBridge.haptic(made.captured?'medium':'light');
   selected=null;
   clearJudge();
   const capVal=PVAL[made.captured]||0;
@@ -970,6 +1077,7 @@ function puzzleTry(mv,noAnim){
     const cell=boardEl.querySelector(`[data-sq="${mv.to}"]`);
     if(cell){cell.classList.add('wrong'); setTimeout(()=>cell.classList.remove('wrong'),380);}
     pzStatus('✗ Not the move — try again');
+    if(window.NativeBridge)NativeBridge.haptic('error');
     return true;
   }
   const made=game.move({from:mv.from,to:mv.to,promotion:promo||'q'});
@@ -991,6 +1099,7 @@ function puzzleSolved(){
   puzzleMode.solved=true;
   pzStatus('🎉 Solved! Nice find.');
   sfx('promote');
+  if(window.NativeBridge)NativeBridge.haptic('success');
   triggerAnalysis(); // analysis allowed again — explore freely
 }
 document.getElementById('pzHint').onclick=()=>{
@@ -1191,12 +1300,16 @@ document.getElementById('navFlip').onclick=()=>{
 function switchTab(name){
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
   document.querySelectorAll('.tabpane').forEach(x=>x.classList.toggle('active',x.id==='tab-'+name));
+  if(name==='history')renderHistory();
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
 /* ---------- Play tab ---------- */
+let currentPgn=null;    // PGN of the loaded game (history + opening detection)
+let currentMeSide=null; // 'w'|'b' when the game was imported from your account
+let currentSource=null; // 'chesscom'|'lichess'|null
 document.getElementById('newGame').onclick=()=>{
-  game.reset();fullHistory=null;startFen=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;clearJudge();
+  game.reset();fullHistory=null;startFen=null;currentPgn=null;loadedMode=false;selected=null;reviewData=null;excursionPly=null;clearJudge();
   clearArrow();render();rebuildMoveList();triggerAnalysis();
 };
 document.getElementById('undoMove').onclick=()=>{if(puzzleMode)return;const und=game.undo();selected=null;clearJudge();afterMove();if(und)animateMoveObj(und,true);};
@@ -1210,7 +1323,9 @@ function loadGameFromPgn(pgn){
   startFen=null;
   const fenH=pgn.match(/\[FEN "([^"]+)"\]/);
   if(fenH){startFen=fenH[1];}
-  gameMeta=startFen?{opening:null,eco:null,bookPlies:0,white:null,black:null,result:null}:extractGameMeta(pgn,fullHistory);
+  currentPgn=pgn; currentMeSide=null; currentSource=null; // import handler sets these after loading
+  gameMeta=extractGameMeta(pgn,fullHistory);
+  if(startFen){ gameMeta.opening=null; gameMeta.eco=null; gameMeta.bookPlies=0; } // custom start: no book
   game.reset(); if(startFen)game.load(startFen);
   ply=0;loadedMode=true;reviewData=null;reviewEvals=null;reviewAccuracy=null;selected=null;excursionPly=null;clearJudge();
   document.getElementById('reviewList').innerHTML='';
@@ -1335,6 +1450,8 @@ function renderCcList(st,list){
         const g=ccGames[+el.dataset.i];
         if(loadGameFromPgn(g.pgn)){
           const blackIsUser=(g.black&&g.black.username&&g.black.username.toLowerCase()===g._me);
+          currentMeSide=blackIsUser?'b':'w'; // which side you played — used for progress stats
+          currentSource=g._source||null;
           if(blackIsUser!==flipped){flipped=blackIsUser;render();paintEvalBar();}
           st.textContent='Loaded — analyzing…';
           switchTab('review');
@@ -1349,7 +1466,7 @@ function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>
 document.getElementById('loadFen').onclick=()=>{
   const fen=document.getElementById('fenInput').value.trim();
   if(!game.load(fen)){alert('Invalid FEN.');return;}
-  fullHistory=null;startFen=fen;loadedMode=false;selected=null;clearJudge();
+  fullHistory=null;startFen=fen;currentPgn=null;loadedMode=false;selected=null;clearJudge();
   render();rebuildMoveList();triggerAnalysis();
 };
 document.getElementById('copyFen').onclick=()=>{navigator.clipboard.writeText(game.fen());setStatus('FEN copied');};
@@ -1441,16 +1558,36 @@ const OPENINGS=[
   ["e4","King's Pawn Opening"],
   ["d4","Queen's Pawn Opening"],
 ];
+/* Full Lichess opening database (3,865 lines, CC0) — loaded lazily, small list above is the fallback. */
+let OPENING_DB=null, openingLoad=null;
+function ensureOpenings(){
+  if(OPENING_DB)return Promise.resolve(OPENING_DB);
+  if(!openingLoad)openingLoad=fetch('openings.json').then(r=>r.json()).then(rows=>{
+    OPENING_DB=new Map(rows.map(([eco,name,line])=>[line,[eco,name]]));
+    return OPENING_DB;
+  }).catch(()=>{ openingLoad=null; return null; });
+  return openingLoad;
+}
 function detectOpening(sans){
+  const clean=sans.map(s=>s.replace(/[+#]/g,''));
+  if(OPENING_DB){ // longest matching prefix
+    let best=null, key='';
+    for(let i=0;i<clean.length && i<40;i++){
+      key+=(i?' ':'')+clean[i];
+      const hit=OPENING_DB.get(key);
+      if(hit)best={eco:hit[0], name:hit[1], plies:i+1};
+    }
+    if(best)return best;
+  }
   let best=null;
   for(const [line,name] of OPENINGS){
     const toks=line.split(' ');
-    if(toks.length>sans.length) continue;
-    if(toks.every((t,i)=>t===sans[i])){
+    if(toks.length>clean.length) continue;
+    if(toks.every((t,i)=>t===clean[i])){
       if(!best||toks.length>best.plies) best={name, plies:toks.length};
     }
   }
-  return best; // {name, plies} or null
+  return best; // {name, plies, eco?} or null
 }
 function extractGameMeta(pgn, sans){
   const meta={opening:null, eco:null, bookPlies:0, white:null, black:null, result:null};
@@ -1459,6 +1596,9 @@ function extractGameMeta(pgn, sans){
   const rH=pgn.match(/\[Result "([^"]+)"\]/); if(rH&&rH[1]!=='*')meta.result=rH[1];
   const eco=pgn.match(/\[ECO "([^"]+)"\]/); if(eco)meta.eco=eco[1];
   const op=pgn.match(/\[Opening "([^"]+)"\]/); if(op&&op[1]!=='?')meta.opening=op[1];
+  // opening database first (precise names), then chess.com's ECOUrl as a fallback
+  const hit=detectOpening(sans);
+  if(hit){ meta.bookPlies=hit.plies; if(!meta.opening)meta.opening=hit.name; if(!meta.eco&&hit.eco)meta.eco=hit.eco; }
   if(!meta.opening){
     const u=pgn.match(/\[ECOUrl "https?:\/\/www\.chess\.com\/openings\/([^"]+)"\]/);
     if(u){ // "Ruy-Lopez-Opening-Morphy-Defense...3.Bb5-a6" → cut at first move-number token
@@ -1467,8 +1607,6 @@ function extractGameMeta(pgn, sans){
       if(words.length)meta.opening=words.join(' ');
     }
   }
-  const hit=detectOpening(sans);
-  if(hit){ meta.bookPlies=hit.plies; if(!meta.opening)meta.opening=hit.name; }
   return meta;
 }
 
@@ -1581,6 +1719,11 @@ function buildReportCard(){
 async function shareReport(){
   if(!reviewData){alert('Run a scan first.');return;}
   const canvas=buildReportCard();
+  if(IS_NATIVE && window.NativeBridge){ // store apps: native share sheet
+    const ok=await NativeBridge.shareImage(canvas.toDataURL('image/png'),'clown-report.png');
+    if(!ok)setStatus('Could not open the share sheet');
+    return;
+  }
   canvas.toBlob(async blob=>{
     if(!blob)return;
     let copied=false;
@@ -1648,11 +1791,23 @@ function classify(d){
 }
 
 /* ---------- Game Review ---------- */
+let reviewRunning=false;
 document.getElementById('runReview').onclick=async()=>{
-  if(!fullHistory||!fullHistory.length){alert('Load a game in the Import or PGN tab first.');return;}
+  if(!fullHistory||!fullHistory.length){alert('Load a game in the Import tab first.');return;}
+  if(reviewRunning)return;
+  reviewRunning=true;
+  try{ await runReviewScan(); } finally{ reviewRunning=false; }
+};
+async function runReviewScan(){
   const depth=+document.getElementById('reviewDepth').value;
   const prog=document.getElementById('progress');const bar=document.getElementById('progressbar');
   prog.style.display='block';
+  if(window.NativeBridge)NativeBridge.prepareInterstitial(); // load the post-review ad while we scan
+  // full opening database → precise names + book depth (waits at most 1.5s)
+  if(!startFen && currentPgn){
+    await Promise.race([ensureOpenings(), new Promise(r=>setTimeout(r,1500))]);
+    gameMeta=extractGameMeta(currentPgn, fullHistory);
+  }
   reviewData=new Array(fullHistory.length).fill(null);
 
   // build fens + verbose moves
@@ -1727,7 +1882,9 @@ document.getElementById('runReview').onclick=async()=>{
   prog.style.display='none';bar.style.width='0';
   renderReview();
   gotoPly(0); // scan done — start reviewing from move 0
-};
+  saveToHistory();
+  if(window.NativeBridge)NativeBridge.showInterstitialIfDue(); // store apps, free tier only
+}
 
 function renderReview(){
   const el=document.getElementById('reviewList');
@@ -1880,6 +2037,89 @@ function highlightReview(){
   document.querySelectorAll('#reviewList .mv').forEach(s=>s.classList.toggle('cur',+s.dataset.ply===ply));
 }
 
+/* ---------- Review history (saved on this device) ---------- */
+const HIST_KEY='reviewHistory_v1', HIST_MAX=50;
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(e){ return []; } }
+function storeHistory(list){
+  // drop the oldest entries until it fits the storage quota
+  while(list.length){
+    try{ localStorage.setItem(HIST_KEY,JSON.stringify(list)); return true; }
+    catch(e){ list.pop(); }
+  }
+  try{ localStorage.removeItem(HIST_KEY); }catch(e){}
+  return false;
+}
+function gameKey(){ return (startFen||'')+'|'+fullHistory.join(' '); }
+function saveToHistory(){
+  if(!fullHistory||!reviewData||!reviewAccuracy)return;
+  const key=gameKey();
+  const list=loadHistory().filter(h=>h.key!==key); // re-review replaces the old entry
+  list.unshift({ key, ts:Date.now(), pgn:currentPgn||'', fen:startFen||null,
+    sans:currentPgn?null:fullHistory, meta:gameMeta, acc:reviewAccuracy,
+    data:reviewData, evals:reviewEvals, pz:puzzleCands||[], me:currentMeSide, src:currentSource,
+    flipped, depth:+document.getElementById('reviewDepth').value });
+  storeHistory(list.slice(0,HIST_MAX));
+}
+function openFromHistory(h){
+  if(puzzleMode)document.getElementById('pzExit').click();
+  let ok=false;
+  if(h.pgn) ok=loadGameFromPgn(h.pgn);
+  else if(h.sans){ // a game without PGN text (e.g. played on the board) — rebuild one
+    const g=new Chess(); if(h.fen)g.load(h.fen);
+    for(const s of h.sans)g.move(s);
+    ok=loadGameFromPgn((h.fen?`[SetUp "1"]\n[FEN "${h.fen}"]\n\n`:'')+g.pgn());
+  }
+  if(!ok){ alert('Could not reopen this game.'); return; }
+  gameMeta=h.meta||gameMeta; reviewAccuracy=h.acc; reviewData=h.data; reviewEvals=h.evals;
+  puzzleCands=h.pz||[]; currentMeSide=h.me||null; currentSource=h.src||null;
+  flipped=!!h.flipped; paintEvalBar();
+  switchTab('review');
+  renderReview();
+  gotoPly(0);
+}
+function renderHistory(){
+  const list=loadHistory();
+  const box=document.getElementById('histList');
+  document.getElementById('histClear').style.display=list.length?'inline-block':'none';
+  // progress stats: your own accuracy over imported games
+  const mine=list.filter(h=>h.me&&h.acc&&h.acc[h.me]!=null);
+  const stats=document.getElementById('histStats');
+  if(mine.length>=2){
+    const avg=a=>a.reduce((s,v)=>s+v,0)/a.length;
+    const all=mine.map(h=>h.acc[h.me]);
+    const recent=all.slice(0,5), older=all.slice(5,10);
+    let trend='';
+    if(older.length>=2){
+      const d=avg(recent)-avg(older);
+      trend=` · last 5 vs previous 5: <b style="color:${d>=0?'var(--good)':'var(--bad)'}">${d>=0?'+':''}${d.toFixed(1)}%</b>`;
+    }
+    stats.innerHTML=`Your average accuracy over ${all.length} games: <b style="color:${accColorOf(avg(all))}">${avg(all).toFixed(1)}%</b>${trend}`;
+  } else stats.textContent=list.length?'':'No reviews yet — import a game and it will appear here.';
+  box.innerHTML=list.map((h,i)=>{
+    const m=h.meta||{};
+    const title=(m.white||m.black)?`${esc(m.white||'?')} vs ${esc(m.black||'?')}`:'Your game';
+    const d=new Date(h.ts);
+    const when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    const sub=[when, m.result, m.opening?esc(m.opening):null, h.src==='lichess'?'Lichess':h.src==='chesscom'?'Chess.com':null].filter(Boolean).join(' · ');
+    const a=h.acc||{};
+    const accCell=(side,lbl)=>a[side]==null?'':`<span style="color:${accColorOf(a[side])}">${lbl}${h.me===side?'★':''} ${a[side].toFixed(0)}</span>`;
+    return `<div class="hist-item" data-i="${i}">
+      <div class="hist-main"><div class="hist-title">${title}</div><div class="hist-sub">${sub}</div></div>
+      <div class="hist-acc">${accCell('w','W')}<br>${accCell('b','B')}</div>
+      <button class="hist-del" data-del="${i}" title="Delete">✕</button></div>`;
+  }).join('');
+  box.querySelectorAll('.hist-item').forEach(el=>el.onclick=e=>{
+    if(e.target.closest('.hist-del'))return;
+    openFromHistory(loadHistory()[+el.dataset.i]);
+  });
+  box.querySelectorAll('.hist-del').forEach(b=>b.onclick=()=>{
+    const l=loadHistory(); l.splice(+b.dataset.del,1); storeHistory(l); renderHistory();
+  });
+}
+document.getElementById('histClear').onclick=()=>{
+  if(confirm('Delete all saved reviews from this device?')){ try{localStorage.removeItem(HIST_KEY);}catch(e){} renderHistory(); }
+};
+
 /* mouse wheel over the board: wheel up = next move, wheel down = previous */
 let wheelAcc=0;
 document.querySelector('.boardbox').addEventListener('wheel',e=>{
@@ -1921,10 +2161,68 @@ initSounds();
 initEngine();
 setTimeout(()=>{ if(engineReady)triggerAnalysis(); else setTimeout(triggerAnalysis,1500); },800);
 
-/* register the service worker (offline app shell) — http/https only, not file:// */
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+/* register the service worker (offline app shell) — web only; the store apps bundle their files */
+if('serviceWorker' in navigator && location.protocol.startsWith('http') && !IS_NATIVE){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
+setTimeout(ensureOpenings,2500); // warm up the opening database in the background
+
+/* ---------- Support link, analytics, Premium (store apps) ---------- */
+(function setupMonetization(){
+  const cfg=window.APP_CONFIG||{};
+  const sup=document.getElementById('supportLink');
+  if(cfg.supportUrl && !IS_NATIVE){ sup.href=cfg.supportUrl; sup.style.display=''; } // tips aren't allowed in store apps
+  if(cfg.goatcounter && !IS_NATIVE){
+    const s=document.createElement('script'); s.async=true; s.src='https://gc.zgo.at/count.js';
+    s.dataset.goatcounter=`https://${cfg.goatcounter}.goatcounter.com/count`; document.head.appendChild(s);
+  }
+  if(IS_NATIVE && window.NativeBridge){
+    NativeBridge.onPremiumChange(refreshPremiumUi);
+    NativeBridge.init().then(refreshPremiumUi).catch(e=>console.warn('native init',e));
+  }
+})();
+function refreshPremiumUi(){
+  const btn=document.getElementById('premiumBtn');
+  if(!window.NativeBridge||!NativeBridge.purchasesAvailable()){ btn.style.display='none'; return; }
+  btn.style.display='';
+  btn.textContent=NativeBridge.isPremium()?'⭐ Premium':'⭐ Go ad-free';
+}
+async function openPaywall(){
+  const pw=document.getElementById('paywall'), pk=document.getElementById('pwPackages'), msg=document.getElementById('pwMsg');
+  pw.hidden=false; msg.textContent='';
+  if(NativeBridge.isPremium()){
+    pk.innerHTML='<div class="small"><b>You’re Premium — thank you! ⭐</b><br>No ads after your reviews.</div>';
+    return;
+  }
+  pk.innerHTML='<div class="small">Loading…</div>';
+  const pkgs=await NativeBridge.getPackages(); // [{id,label,price}]
+  if(!pkgs.length){ pk.innerHTML='<div class="small">Premium isn’t available right now — please try again later.</div>'; return; }
+  pk.innerHTML=pkgs.map((p,i)=>`<button class="btn pw-pkg" data-i="${i}">${esc(p.label)} · ${esc(p.price)}</button>`).join('');
+  pk.querySelectorAll('.pw-pkg').forEach(b=>b.onclick=async()=>{
+    msg.textContent='Opening the store…';
+    const r=await NativeBridge.purchase(pkgs[+b.dataset.i].id);
+    if(r.ok){ msg.textContent='Welcome to Premium! ⭐'; refreshPremiumUi(); setTimeout(()=>{pw.hidden=true;},1200); }
+    else msg.textContent=r.cancelled?'':('Purchase failed: '+(r.error||'unknown error'));
+  });
+}
+document.getElementById('premiumBtn').onclick=()=>{ if(window.NativeBridge)openPaywall(); };
+document.getElementById('pwClose').onclick=()=>{ document.getElementById('paywall').hidden=true; };
+document.getElementById('paywall').onclick=e=>{ if(e.target.id==='paywall')e.currentTarget.hidden=true; };
+document.getElementById('pwRestore').onclick=async()=>{
+  const msg=document.getElementById('pwMsg'); msg.textContent='Restoring…';
+  const r=await NativeBridge.restore();
+  msg.textContent=r.premium?'Restored — you’re Premium ⭐':(r.error?'Restore failed: '+r.error:'No active subscription found.');
+  refreshPremiumUi();
+};
+/* Android hardware back button: close sheet → leave puzzle → back to Play → minimize */
+window.addEventListener('native-back',()=>{
+  const pw=document.getElementById('paywall');
+  if(!pw.hidden){ pw.hidden=true; return; }
+  if(puzzleMode){ document.getElementById('pzExit').click(); return; }
+  const active=document.querySelector('.tabs button.active');
+  if(active&&active.dataset.tab!=='play'){ switchTab('play'); return; }
+  if(window.NativeBridge)NativeBridge.minimize();
+});
 </script>
 </body>
 </html>

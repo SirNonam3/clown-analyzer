@@ -2,3 +2,7 @@
 freesound_community-chess-pieces-60890.mp3
 New Text Document.txt
 Screenshot_*.png
+.claude/
+node_modules/
+www/
+*.apk
