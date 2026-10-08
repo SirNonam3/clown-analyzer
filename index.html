@@ -9,7 +9,7 @@
 <meta property="og:type" content="website">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#090a16">
-<script>/* saved app colours before first paint (no flash) */try{var u=JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}');if(u.theme==='violet')document.documentElement.dataset.theme='violet';}catch(e){}</script>
+<script>/* saved app colours before first paint (no flash) */try{var u=JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}');if(u.theme==='violet'||u.theme==='day')document.documentElement.dataset.theme=u.theme;}catch(e){}</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -185,6 +185,25 @@
   --field:#0f1220; --focus:#8b7cf82e; --progress:linear-gradient(90deg,#8b7cf8,#4fd1c5);
   --panel-shadow:0 12px 44px #0007;
 }
+/* Circus Day — the light theme: warm cream, circus red and gold */
+:root[data-theme="day"]{
+  --bg:#fff8ee; --panel:#ffffff; --panel2:#fbeee0; --border:#ecd9c3;
+  --text:#2b1a2e; --muted:#8c7a86; --accent:#e5304f; --accent2:#f2b33d;
+  --good:#1f9d55; --bad:#d6334b; --warn:#c98a12;
+  --grad:linear-gradient(135deg,#ef3b5a,#d81f3a);
+  --grad-shadow:0 2px 10px #d81f3a33; --grad-shadow-hover:0 4px 16px #d81f3a4d; --tab-glow:0 2px 10px #d81f3a40;
+  --title-grad:linear-gradient(90deg,#d81f3a 0%,#f2a33d 100%); --title-font:'Righteous','Inter',sans-serif;
+  --page-bg:radial-gradient(1100px 520px at 72% -10%,#ffe6cc 0%,transparent 60%),linear-gradient(180deg,#fff8ee,#fdf0de);
+  --head-bg:rgba(255,248,238,.86); --navbar-bg:rgba(255,250,243,.97);
+  --panel-grad:linear-gradient(180deg,#ffffff,#fffaf3); --card-grad:linear-gradient(135deg,#fff4e8,#fdebd8);
+  --field:#fffdf9; --focus:#e5304f2e; --progress:linear-gradient(90deg,#e5304f,#f2a33d);
+  --panel-shadow:0 10px 30px #b07a4a22; --ring-track:#2b1a2e14;
+}
+:root[data-theme="day"] #board{box-shadow:0 12px 30px #6b3a1a33,0 0 0 1px #0000000f}
+:root[data-theme="day"] .pv-bubble{border:1px solid var(--border)}
+:root[data-theme="day"] .pv-bubble::before{border-right-color:#fff}
+:root[data-theme="day"] .hdr-btn,:root[data-theme="day"] header .status{background:#fff}
+:root[data-theme="day"] .moves .mv.cur,:root[data-theme="day"] .tabs button.active{color:#fff}
 body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--page-bg);min-height:100vh}
 /* header */
 header{position:sticky;top:0;z-index:50;background:var(--head-bg);
@@ -389,10 +408,43 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .sq.mated::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(circle,#f0475f88 0%,#f0475f33 55%,transparent 75%);animation:mateGlow 1.4s var(--md,.5s) ease both}
 @keyframes mateGlow{0%{opacity:0}100%{opacity:1}}
+/* achievement stickers: circus tickets (gold for the hard ones) */
+.tix{--notch:var(--panel);width:66px;height:52px;border-radius:6px;position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  background:repeating-linear-gradient(90deg,#d81f3a 0 6px,#e8344d 6px 12px);box-shadow:0 3px 8px #0006}
+.tix.gold{background:repeating-linear-gradient(90deg,#d99a1e 0 6px,#f2b33d 6px 12px)}
+.tix::before,.tix::after{content:"";position:absolute;top:50%;width:11px;height:11px;margin-top:-5.5px;border-radius:50%;background:var(--notch)}
+.tix::before{left:-5.5px} .tix::after{right:-5.5px}
+.tix .in{width:52px;height:40px;border:1.5px dashed #fff6eecc;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.tix svg{width:24px;height:24px}
+.tix.lock{filter:grayscale(1);opacity:.42}
+.stk-sum{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:4px}
+.stk-bar{flex:1;height:7px;border-radius:999px;background:var(--panel2);overflow:hidden}
+.stk-bar i{display:block;height:100%;background:var(--grad)}
+.stk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:10px;margin-top:6px}
+.stk-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:12px;padding:10px 6px 8px;--notch:var(--panel2)}
+.stk-item .tix{--notch:var(--panel2)}
+.stk-item b{font-size:12px;margin-top:3px} .stk-item small{font-size:10.5px;color:var(--muted);line-height:1.25}
+.stk-item em{font-style:normal;font-size:10px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.stk-item.locked b{color:var(--muted)}
+.stk-prog{display:block;width:70%;height:4px;border-radius:3px;background:var(--border);overflow:hidden}
+.stk-prog i{display:block;height:100%;background:var(--grad)}
+/* unlock toast */
+.stk-toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:980;cursor:pointer;
+  display:flex;align-items:center;gap:12px;background:#fff;color:#1b1638;border-radius:16px;padding:10px 12px 10px 16px;
+  box-shadow:0 10px 34px #000a;max-width:min(92vw,420px);animation:stkIn .45s cubic-bezier(.2,.9,.3,1.3) both}
+.stk-toast .tix{--notch:#fff}
+.stk-toast .pawnzo-face{width:50px;height:50px}
+.stk-txt{display:flex;flex-direction:column;min-width:0} .stk-txt small{font-size:10px;font-weight:800;color:#d81f3a;letter-spacing:.8px}
+.stk-txt b{font-size:15px} .stk-txt span{font-size:12px;color:#5a5470;line-height:1.3}
+.stk-toast.out{animation:stkOut .3s ease forwards}
+@keyframes stkIn{0%{transform:translate(-50%,40px) scale(.8);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+@keyframes stkOut{to{transform:translate(-50%,30px);opacity:0}}
+@media(max-width:640px){.stk-toast{bottom:calc(80px + env(safe-area-inset-bottom))}}
 /* accuracy rings */
 .acc-ring{position:relative;width:74px;height:74px;margin:0 auto}
 .acc-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ar-bg{fill:none;stroke:#ffffff14;stroke-width:7}
+.ar-bg{fill:none;stroke:var(--ring-track,#ffffff14);stroke-width:7}
 .ar-fg{fill:none;stroke-width:7;stroke-linecap:round}
 .ar-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
 .ar-txt b{font-size:18px;font-weight:800} .ar-txt small{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px}
@@ -441,7 +493,7 @@ header h1{margin-right:auto}
 .set-head h2{margin:0}
 .set-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;margin:16px 0 7px}
 .set-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.set-grid-2{grid-template-columns:repeat(2,1fr)}
+.set-grid-2{grid-template-columns:repeat(3,1fr)}
 .set-opt{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:6px 6px 5px;cursor:pointer;
   color:var(--text);font:600 11px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
 .set-opt:hover{border-color:var(--muted)}
@@ -618,6 +670,7 @@ header h1{margin-right:auto}
       <div class="hist-views">
         <button data-hv="recent" class="active">🕘 Recent</button>
         <button data-hv="fav">★ Favorites <span id="favCount"></span></button>
+        <button data-hv="stickers">🎟 Stickers <span id="stkCount"></span></button>
       </div>
       <p class="small" id="histHint">Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan. Tap ☆ to keep a game in Favorites.</p>
       <div id="histStats" class="small" style="margin:6px 0 8px"></div>
@@ -1052,7 +1105,9 @@ const BOARD_THEMES=[ // id, name, light, dark, last-move tint, engine-arrow colo
 // arrows contrast with both square colours (complementary hue), so engine hints stay readable on every board
 function arrowColor(){ return (BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0])[5]; }
 const APP_THEMES=[['neon','Neon Night','linear-gradient(90deg,#090a16,#ff3b7f,#8b5cf6)'],
-  ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)']];
+  ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)'],
+  ['day','Circus Day','linear-gradient(90deg,#fff8ee,#e5304f,#f2b33d)']];
+const THEME_BAR={neon:'#090a16',violet:'#0d0f1a',day:'#fff8ee'}; // browser / phone status-bar colour
 const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon',pops:true,funSounds:true,fx:true}; // pops/funSounds/fx: Pawnzo & celebrations
 try{ Object.assign(uiPrefs,JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}')); }catch(e){}
 function pieceSrc(color,type,set){ return `pieces/${set||uiPrefs.pieces}/${color}${type.toUpperCase()}.svg`; }
@@ -1069,7 +1124,7 @@ function applyAppearance(){
   root.style.setProperty('--light',b[2]); root.style.setProperty('--dark',b[3]); root.style.setProperty('--move',b[4]);
   BOARD_THEMES.forEach(t=>boardEl.classList.toggle('bt-'+t[0],t[0]===b[0]));
   if(uiPrefs.theme==='neon')delete root.dataset.theme; else root.dataset.theme=uiPrefs.theme;
-  const tc=document.querySelector('meta[name="theme-color"]'); if(tc)tc.content=uiPrefs.theme==='violet'?'#0d0f1a':'#090a16';
+  const tc=document.querySelector('meta[name="theme-color"]'); if(tc)tc.content=THEME_BAR[uiPrefs.theme]||'#090a16';
   preloadPieces(uiPrefs.pieces);
 }
 async function setAppearance(key,val){
@@ -1833,6 +1888,7 @@ function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
     funSound('chime'); neonBurstAt(boardEl,110);
     if(pm.rated&&pzNewBest){ setTimeout(()=>neonBurstAt(boardEl,170),450); pzNewBest=false; }
   }
+  try{ stickersAfterPuzzle(kind==='win'&&pm.themes.some(t=>/^mate/.test(t))); }catch(e){ console.warn('stickers',e); }
   document.getElementById('pzResult').innerHTML=`<div class="pz-result ${kind==='win'?'win':'loss'}">
     <div class="pz-res-head">${head} ${delta}</div>
     <div class="small" style="margin-top:2px">${info}</div>
@@ -2519,7 +2575,6 @@ function pawnzoPick(pool,key,personal){ // random line, not one of the last few 
 function pawnzoFill(line,v){ return line.replace(/^@/,'').replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!=null?v[k]:m); }
 function pawnzoFace(mood,cls){ return `<img class="pawnzo-face${cls?' '+cls:''}" src="mascot/${mood}.svg" alt="${PAWNZO}" draggable="false">`; }
 function pawnzoNote(mood,text){ return `<div class="pawnzo-note">${pawnzoFace(mood)}<div class="pv-bubble">${esc(text)}</div></div>`; }
-['happy','laugh','wow','cool','think','sad'].forEach(m=>{ new Image().src=`mascot/${m}.svg`; }); // ~18 KB, so pop-ups appear instantly
 function hashStr(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0; return Math.abs(h); }
 
 /* review verdict — about you when it's your imported game, otherwise about the whole game */
@@ -2619,7 +2674,8 @@ function neonBurst(x,y,count){
   cv.className='fx-canvas'; cv.width=innerWidth*dpr; cv.height=innerHeight*dpr;
   document.body.appendChild(cv);
   const g=cv.getContext('2d'); g.scale(dpr,dpr);
-  const COL=['#ff3b7f','#a78bfa','#5eead4','#ffd1e8','#ffffff'], parts=[];
+  const day=document.documentElement.dataset.theme==='day'; // glowing "add light" sparks vanish on cream — use solid colours there
+  const COL=day?['#e5304f','#f2a33d','#8b5cf6','#1aa6a6','#ff7aa8']:['#ff3b7f','#a78bfa','#5eead4','#ffd1e8','#ffffff'], parts=[];
   for(let i=0;i<(count||110);i++){
     const a=Math.random()*Math.PI*2, sp=2+Math.random()*7;
     parts.push({x,y,px:x,py:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:COL[i%COL.length],s:2+Math.random()*2.2,life:1,decay:.012+Math.random()*.012});
@@ -2627,12 +2683,12 @@ function neonBurst(x,y,count){
   const t0=performance.now(); let last=t0;
   (function frame(now){
     now=now||performance.now(); const dt=Math.min(3,(now-last)/16.67); last=now;
-    g.clearRect(0,0,innerWidth,innerHeight); g.globalCompositeOperation='lighter'; g.lineCap='round';
+    g.clearRect(0,0,innerWidth,innerHeight); g.globalCompositeOperation=day?'source-over':'lighter'; g.lineCap='round';
     const drag=Math.pow(.985,dt); let alive=0;
     for(const p of parts){
       if(p.life<=0)continue; alive++;
       p.px=p.x; p.py=p.y; p.vx*=drag; p.vy=p.vy*drag+.05*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=p.decay*dt;
-      g.globalAlpha=Math.max(0,Math.min(1,p.life*1.6)); g.strokeStyle=p.c; g.lineWidth=p.s; g.shadowColor=p.c; g.shadowBlur=12;
+      g.globalAlpha=Math.max(0,Math.min(1,p.life*1.6)); g.strokeStyle=p.c; g.lineWidth=p.s; g.shadowColor=p.c; g.shadowBlur=day?3:12;
       g.beginPath(); g.moveTo(p.px-p.vx*2,p.py-p.vy*2); g.lineTo(p.x,p.y); g.stroke();
     }
     if(alive&&performance.now()-t0<4000)requestAnimationFrame(frame); else cv.remove();
@@ -2702,99 +2758,75 @@ function catCounts(){
 }
 
 /* ---------- Share-as-image report card ---------- */
-const LOGO_IMG=new Image(); LOGO_IMG.src='logo.svg'; // preloaded for the card title
-const CARD_THEME={ // report card colours follow Settings → App colours
-  neon:{bg0:'#14102f',bg1:'#07080f',glow:'255,59,127',t0:'#ff5c93',t1:'#a78bfa',accent:'#ff7aa8',
-    titleFont:'400 40px Righteous,Inter,Segoe UI,sans-serif'},
-  violet:{bg0:'#12142a',bg1:'#0b0d15',glow:'139,124,248',t0:'#a99cff',t1:'#4fd1c5',accent:'#8b7cf8',
-    titleFont:'800 38px Inter,Segoe UI,sans-serif'}};
+// all six faces, preloaded (~18 KB): pop-ups appear instantly and the poster can draw them
+const PAWNZO_IMG={}; ['happy','laugh','wow','cool','think','sad'].forEach(m=>{ const i=new Image(); i.src=`mascot/${m}.svg`; PAWNZO_IMG[m]=i; });
+/* The report card is a vintage circus poster: "Tonight's show, starring <you>" — Pawnzo, three stamps and his verdict. */
 function buildReportCard(){
   const W=720,H=920,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');
-  const th=CARD_THEME[uiPrefs.theme]||CARD_THEME.neon;
-  // background + brand glow
-  const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,th.bg0);bg.addColorStop(1,th.bg1);
-  x.fillStyle=bg;x.fillRect(0,0,W,H);
-  const glow=x.createRadialGradient(W*0.75,60,10,W*0.75,60,420);
-  glow.addColorStop(0,`rgba(${th.glow},0.22)`);glow.addColorStop(1,`rgba(${th.glow},0)`);
-  x.fillStyle=glow;x.fillRect(0,0,W,H);
-  // title
-  const tg=x.createLinearGradient(W*0.2,0,W*0.8,0);tg.addColorStop(0,th.t0);tg.addColorStop(1,th.t1);
-  x.textAlign='center';
-  x.font=th.titleFont;x.fillStyle=tg;
-  if(LOGO_IMG.complete && LOGO_IMG.naturalWidth){ // logo + title, centred together
-    const title='CLOWN ANALYZER', tw=x.measureText(title).width, L=54, gap=14, start=(W-(L+gap+tw))/2;
-    x.save(); x.beginPath();
-    if(x.roundRect) x.roundRect(start,30,L,L,13); else x.rect(start,30,L,L); // roundRect: iOS 16+
-    x.clip(); x.drawImage(LOGO_IMG,start,30,L,L); x.restore();
-    x.textAlign='left'; x.fillText(title,start+L+gap,70); x.textAlign='center';
-  } else x.fillText('🤡 CLOWN ANALYZER',W/2,66);
-  x.font='600 14px Inter,Segoe UI,sans-serif';x.fillStyle='#9299b3';
-  x.fillText('GAME REPORT',W/2,94);
-  // players + opening
-  const wName=(gameMeta&&gameMeta.white)||'White', bName=(gameMeta&&gameMeta.black)||'Black';
-  x.font='700 24px Inter,Segoe UI,sans-serif';x.fillStyle='#eceef8';
-  x.fillText(`${wName}  vs  ${bName}`,W/2,148);
-  let y=176;
-  if(gameMeta&&gameMeta.result){x.font='600 16px Inter,sans-serif';x.fillStyle='#9299b3';x.fillText(gameMeta.result,W/2,y);y+=28;}
-  if(gameMeta&&gameMeta.opening){x.font='600 15px Inter,sans-serif';x.fillStyle=th.accent;x.fillText('📖 '+gameMeta.opening,W/2,y);}
-  // accuracy blocks
-  const drawAcc=(cx,label,v)=>{
-    x.font='600 15px Inter,sans-serif';x.fillStyle='#9299b3';x.fillText(label,cx,258);
-    x.font='800 44px Inter,sans-serif';x.fillStyle=(v==null)?'#9299b3':accColorOf(v);
-    x.fillText(v==null?'—':v.toFixed(1)+'%',cx,306);
-    const e=estEloOf(v);
-    x.font='600 14px Inter,sans-serif';x.fillStyle='#9299b3';
-    x.fillText(e==null?'':'≈ '+e+' Elo',cx,330);
-  };
-  drawAcc(W*0.3,'WHITE',reviewAccuracy&&reviewAccuracy.w);
-  drawAcc(W*0.7,'BLACK',reviewAccuracy&&reviewAccuracy.b);
-  // category table
-  const counts=catCounts();
-  const cats=GOOD_ORDER.concat(BAD_ORDER);
-  let ty=384;
-  x.font='700 13px Inter,sans-serif';x.fillStyle='#9299b3';
-  x.textAlign='right';x.fillText('W',W-190,ty);x.fillText('B',W-120,ty);
-  ty+=24;
-  for(const ct of cats){
-    const m=CATS[ct];
-    // icon disc
-    x.beginPath();x.arc(190,ty-5,10,0,7);x.fillStyle=m.color;x.fill();
-    x.font='800 9px Inter,sans-serif';x.fillStyle='#fff';x.textAlign='center';x.fillText(m.icon,190,ty-2);
-    x.font='600 15px Inter,sans-serif';x.fillStyle='#d7daea';x.textAlign='left';x.fillText(m.label,212,ty);
-    x.font='700 15px Inter,sans-serif';x.fillStyle=m.color;x.textAlign='right';
-    x.fillText(String(counts.w[ct]),W-190,ty);x.fillText(String(counts.b[ct]),W-120,ty);
-    ty+=26;
+  const RED='#d81f3a', INK='#3a1020', SOFT='#8c5a68', CREAM='#fbf1de', GOLD='#f2b33d';
+  const spaced=(t,cx,y,gap)=>{ // letter-spaced text, centred (canvas letterSpacing isn't everywhere yet)
+    const ws=[...t].map(ch=>x.measureText(ch).width), tw=ws.reduce((a,b)=>a+b,0)+gap*(ws.length-1);
+    let px=cx-tw/2; x.textAlign='left'; [...t].forEach((ch,i)=>{ x.fillText(ch,px,y); px+=ws[i]+gap; }); x.textAlign='center'; };
+  // paper + sunburst
+  x.fillStyle=CREAM; x.fillRect(0,0,W,H);
+  x.save(); x.translate(W/2,-110); x.fillStyle='rgba(216,31,58,0.07)';
+  for(let i=0;i<36;i+=2){ const a0=i/36*Math.PI*2, a1=(i+1)/36*Math.PI*2;
+    x.beginPath(); x.moveTo(0,0); x.lineTo(Math.cos(a0)*1600,Math.sin(a0)*1600); x.lineTo(Math.cos(a1)*1600,Math.sin(a1)*1600); x.closePath(); x.fill(); }
+  x.restore();
+  // frame: thick red border, cream gap, thin red line
+  x.strokeStyle=RED; x.lineWidth=18; x.strokeRect(9,9,W-18,H-18);
+  x.lineWidth=3; x.strokeRect(30,30,W-60,H-60);
+  // who's the star: you (imported game), else the winner (or White)
+  const res=gameMeta&&gameMeta.result, me=currentMeSide||(res==='0-1'?'b':'w');
+  const nm=s=>(gameMeta&&(s==='w'?gameMeta.white:gameMeta.black))||(s==='w'?'White':'Black');
+  const star=nm(me), opp=nm(me==='w'?'b':'w');
+  const outcome=!res?'':res==='1/2-1/2'?'a draw':((res==='1-0')===(me==='w')?'won '+res:'lost '+res);
+  // header
+  x.textAlign='center'; x.fillStyle=RED; x.font='800 19px Inter,Segoe UI,sans-serif';
+  spaced("★  TONIGHT'S SHOW  ★",W/2,82,5);
+  x.font='400 66px Righteous,Inter,sans-serif';
+  x.fillStyle=GOLD; x.fillText('CLOWN ANALYZER',W/2+4,154); x.fillStyle=RED; x.fillText('CLOWN ANALYZER',W/2,150);
+  x.fillStyle=INK; x.font='800 17px Inter,sans-serif'; spaced('STARRING',W/2,196,4);
+  x.font='400 46px Righteous,Inter,sans-serif'; x.fillText(star.length>18?star.slice(0,17)+'…':star,W/2,244);
+  x.fillStyle=SOFT; x.font='600 18px Inter,sans-serif';
+  const opening=gameMeta&&gameMeta.opening?gameMeta.opening.split(':')[0]:''; // "Italian Game", not the full variation
+  const sub=['versus '+opp, opening, outcome].filter(Boolean).join('  ·  ');
+  x.fillText(sub.length>64?sub.slice(0,63)+'…':sub,W/2,274);
+  // Pawnzo, in the mood of the verdict
+  const v=reviewData&&reviewAccuracy?pawnzoVerdictData():{mood:'happy'}, face=PAWNZO_IMG[v.mood];
+  if(face&&face.complete&&face.naturalWidth) x.drawImage(face,W/2-105,286,210,210);
+  // three stamps: accuracy, Clown moves, brilliant moves
+  const counts=catCounts(), acc=reviewAccuracy?reviewAccuracy[me]:null;
+  const stamp=(cx,big,label,rot)=>{
+    x.save(); x.translate(cx,600); x.rotate(rot);
+    x.strokeStyle=RED; x.lineWidth=5; x.beginPath(); x.arc(0,0,74,0,7); x.stroke();
+    x.lineWidth=2; x.beginPath(); x.arc(0,0,64,0,7); x.stroke();
+    x.fillStyle=RED; x.font='400 '+(big.length>4?38:46)+'px Righteous,Inter,sans-serif'; x.fillText(big,0,12);
+    x.font=(label.length>9?'800 12px':'800 13px')+' Inter,sans-serif'; spaced(label,0,38,label.length>9?0.5:2); x.restore(); };
+  stamp(W/2-180,acc==null?'—':acc.toFixed(1)+'%','ACCURACY',-0.1);
+  stamp(W/2,String(counts[me].blunder),'CLOWN MOVES',0.05);
+  stamp(W/2+180,String(counts[me].brilliant),'BRILLIANT',-0.06);
+  // Pawnzo's verdict, as a pull quote
+  const lineEl=document.getElementById('pawnzoLine'), quote=lineEl?lineEl.textContent:'';
+  if(quote){
+    const wrap=size=>{ x.font=`italic 600 ${size}px Inter,sans-serif`;
+      const out=[]; let cur=''; for(const w of ('“'+quote+'”').split(' ')){ const t=cur?cur+' '+w:w;
+        if(x.measureText(t).width>580&&cur){ out.push(cur); cur=w; } else cur=t; } out.push(cur); return out; };
+    let lines=wrap(23), lh=30; if(lines.length>2){ lines=wrap(20).slice(0,3); lh=26; } // long lines get a smaller font
+    x.fillStyle=INK; lines.forEach((l,i)=>x.fillText(l,W/2,722+i*lh));
+    x.fillStyle=RED; x.font='800 15px Inter,sans-serif'; spaced('— PAWNZO',W/2,722+(lines.length-1)*lh+34,3);
   }
-  // eval graph
-  const gx=60,gy=650,gw=W-120,gh=160;
-  x.fillStyle='#12141f';x.fillRect(gx,gy,gw,gh);
-  if(reviewEvals&&reviewEvals.length>1){
-    const n=reviewEvals.length;
-    const px=i=>gx+i/(n-1)*gw, py=cp=>gy+gh-(winPct(cp)/100)*gh;
-    x.beginPath();x.moveTo(gx,gy+gh);
-    for(let i=0;i<n;i++)x.lineTo(px(i),py(reviewEvals[i]));
-    x.lineTo(gx+gw,gy+gh);x.closePath();
-    x.fillStyle='rgba(236,233,248,0.92)';x.fill();
-    x.strokeStyle='rgba(255,255,255,0.18)';x.setLineDash([4,4]);
-    x.beginPath();x.moveTo(gx,gy+gh/2);x.lineTo(gx+gw,gy+gh/2);x.stroke();x.setLineDash([]);
-    const DOT={brilliant:1,great:1,inaccuracy:1,mistake:1,miss:1,blunder:1};
-    for(let i=0;i<reviewData.length;i++){
-      const d=reviewData[i];
-      if(d&&DOT[d.cat]){
-        x.beginPath();x.arc(px(i+1),py(reviewEvals[i+1]),4.5,0,7);
-        x.fillStyle=CATS[d.cat].color;x.fill();
-        x.strokeStyle='#0d0f1a';x.lineWidth=1.5;x.stroke();
-      }
-    }
-  }
-  // footer
-  x.textAlign='center';x.font='600 14px Inter,sans-serif';x.fillStyle='#9299b3';
-  x.fillText('Free chess game review — Clown Analyzer',W/2,H-36);
+  // ticket stub footer
+  x.strokeStyle=SOFT; x.lineWidth=2; x.setLineDash([8,7]); x.beginPath(); x.moveTo(60,H-92); x.lineTo(W-60,H-92); x.stroke(); x.setLineDash([]);
+  x.fillStyle=SOFT; x.font='700 15px Inter,sans-serif'; spaced('ADMIT ONE  ·  SIRNONAM3.GITHUB.IO/CLOWN-ANALYZER',W/2,H-58,2);
   return c;
 }
 async function shareReport(){
   if(!reviewData){alert('Run a scan first.');return;}
+  // the poster needs its font and Pawnzo's face loaded before drawing
+  try{ await Promise.race([Promise.all([document.fonts.load('46px Righteous'),
+    ...Object.values(PAWNZO_IMG).map(i=>i.decode?i.decode().catch(()=>{}):0)]), new Promise(r=>setTimeout(r,1500))]); }catch(e){}
   const canvas=buildReportCard();
   if(IS_NATIVE && window.NativeBridge){ // store apps: native share sheet
     const ok=await NativeBridge.shareImage(canvas.toDataURL('image/png'),'clown-report.png');
@@ -2919,6 +2951,7 @@ document.getElementById('runReview').onclick=async()=>{
   const say=()=>{ const l=document.getElementById('scanLine'); if(l)l.textContent=pawnzoPick('think'); };
   say(); sp.hidden=false; const talk=setInterval(say,2600);
   try{ await runReviewScan(); } finally{ reviewRunning=false; clearInterval(talk); sp.hidden=true; }
+  try{ stickersAfterReview(); }catch(e){ console.warn('stickers',e); } // achievements for your own games
 };
 async function runReviewScan(){
   const depth=+document.getElementById('reviewDepth').value;
@@ -3279,6 +3312,7 @@ function toggleFav(entry){
   entry.ts=Date.now(); list.unshift(entry);
   if(!storeFavs(list))return null;
   if(window.NativeBridge)NativeBridge.haptic('success');
+  stickersAfterFav();
   return true;
 }
 function favStarHtml(on){
@@ -3309,7 +3343,9 @@ function renderHistory(){
   const favs=loadFavs();
   document.getElementById('favCount').textContent=favs.length?`(${favs.length})`:'';
   document.querySelectorAll('.hist-views button').forEach(b=>b.classList.toggle('active',b.dataset.hv===histView));
+  document.getElementById('stkCount').textContent=`(${Object.keys(stickerStore().got).length}/${STICKERS.length})`;
   if(histView==='fav'){ renderFavorites(favs); return; }
+  if(histView==='stickers'){ renderStickers(); return; }
   document.getElementById('histHint').textContent='Every game you review is saved on this device. Tap one to reopen its review instantly — no rescan. Tap ☆ to keep a game in Favorites.';
   const favKeys=new Set(favs.map(f=>f.key));
   const list=loadHistory();
@@ -3353,6 +3389,124 @@ function renderHistory(){
   box.querySelectorAll('.hist-del').forEach(b=>b.onclick=()=>{
     const l=loadHistory(); l.splice(+b.dataset.del,1); storeHistory(l); renderHistory();
   });
+}
+/* ---------- Achievement stickers 🎟 (circus tickets) — earned from your own games, puzzles and the app ---------- */
+const STK_ICON={ // 24×24 white line icons
+  tent:'<path d="M3 20h18L12 5z"/><path d="M12 5V2.5l3 1.2-3 1.2"/><path d="M10 20l2-5 2 5"/>',
+  bang:'<text x="12" y="17.5" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="15" fill="#fff" stroke="none">!!</text>',
+  tophat:'<path d="M7 17V6.5h10V17"/><path d="M3.5 17.5h17"/><path d="M7 13.5h10"/>',
+  nonose:'<circle cx="12" cy="12" r="6.5"/><path d="M5 19L19 5"/>',
+  target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="#fff"/>',
+  rope:'<path d="M2.5 15c3-2 6-2 9.5 0s6.5 2 9.5 0"/><circle cx="12" cy="7.5" r="2"/><path d="M12 9.5v4M8.5 11.5h7"/>',
+  crown:'<path d="M4.5 17.5l-1-9 5 4 3.5-6.5 3.5 6.5 5-4-1 9z"/><path d="M4.6 20.3h14.8"/>',
+  balls:'<circle cx="6.5" cy="15.5" r="3"/><circle cx="12" cy="7.5" r="3"/><circle cx="17.5" cy="15.5" r="3"/>',
+  flame:'<path d="M12 21c-4 0-6.5-2.8-6.5-6.3 0-3.7 3-5.6 3.6-9.7 2.4 1.6 3.4 3.7 3.4 5.6 1-.7 1.7-1.9 1.8-3.3 2.5 2 4.2 4.5 4.2 7.4 0 3.5-2.5 6.3-6.5 6.3z"/>',
+  inferno:'<path d="M8.5 21c-3 0-5-2.1-5-4.8 0-2.8 2.3-4.3 2.8-7.4 1.8 1.2 2.6 2.8 2.6 4.3"/><path d="M14 21c-3.5 0-5.6-2.4-5.6-5.4 0-3.2 2.6-4.9 3.1-8.4 2.1 1.4 3 3.2 3 4.9.8-.6 1.5-1.6 1.5-2.8 2.2 1.7 3.6 3.9 3.6 6.4 0 3-2.1 5.3-5.6 5.3z"/>',
+  puzzle:'<path d="M5 7h3a1 1 0 0 0 1-1 2 2 0 0 1 4 0 1 1 0 0 0 1 1h3v3a1 1 0 0 0 1 1 2 2 0 0 1 0 4 1 1 0 0 0-1 1v3h-3a1 1 0 0 1-1-1 2 2 0 0 0-4 0 1 1 0 0 1-1 1H5v-3a1 1 0 0 1 1-1 2 2 0 0 0 0-4 1 1 0 0 1-1-1z"/>',
+  puzstar:'<path d="M12 3.5l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>',
+  trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8.5 20.5h7M10 17h4v3.5h-4z"/>',
+  mountain:'<path d="M2.5 19.5l7-11 4.5 7 2.5-3.5 5 7.5z"/><path d="M9.5 8.5l1.5 2.4"/>',
+  king:'<path d="M12 3v4M10 5h4"/><path d="M7.5 20.5h9M8.5 17.5c-1.8-1.6-3-3.6-3-5.4 0-2.3 2-3.6 3.6-2.7C10.4 10 11.4 11 12 12c.6-1 1.6-2 2.9-2.6 1.6-.9 3.6.4 3.6 2.7 0 1.8-1.2 3.8-3 5.4z"/>',
+  heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+};
+// [id, icon, name, how, Pawnzo's line, gold ticket?, progress(stats,profile,favs) → [now, goal] (only for counters)]
+const STICKERS=[
+  ['opening','tent','Opening Night','Review your first game','The curtain rises! Welcome to the circus.',0,s=>[s.reviews,1]],
+  ['brilliant','bang','Brilliant!','Play your first brilliant move','Your first brilliant move. I\'m framing it.',0,s=>[s.brilliants,1]],
+  ['ringmaster','tophat','Ringmaster','10 brilliant moves','Ten brilliant moves. You\'re running this circus now.',1,s=>[s.brilliants,10]],
+  ['honkfree','nonose','Honk-free','A game (20+ moves) with no Clown move','A whole game without a single honk? Who ARE you?',0,null],
+  ['bullseye','target','Bullseye','95% accuracy in a game','95%?! Did you borrow Stockfish\'s brain?',1,null],
+  ['tightrope','rope','Tightrope','Win a game you were losing','Lost position, won game. Pure tightrope walking.',0,null],
+  ['college','crown','Clown College','Win despite 3+ Clown moves','Three Clown moves and you still won. Honours degree!',0,null],
+  ['juggler','balls','Juggler','Review 25 of your games','25 games reviewed. You juggle better than I do.',0,s=>[s.reviews,25]],
+  ['fire','flame','Fire Breather','10 puzzles in a row','Ten in a row! Careful, you\'ll burn the tent down.',0,(s,p)=>[p.best,10]],
+  ['torch','inferno','Human Torch','25 puzzles in a row','TWENTY-FIVE in a row. The tent is officially on fire.',1,(s,p)=>[p.best,25]],
+  ['rookie','puzzle','Puzzle Rookie','Solve 10 puzzles','Ten puzzles solved. The training wheels are off.',0,(s,p)=>[p.solved,10]],
+  ['pro','puzstar','Puzzle Pro','Solve 100 puzzles','A hundred puzzles! You\'re a pro now. A clown pro.',0,(s,p)=>[p.solved,100]],
+  ['legend','trophy','Puzzle Legend','Solve 500 puzzles','Five hundred puzzles. They\'ll write songs about you.',1,(s,p)=>[p.solved,500]],
+  ['mountain','mountain','Mountaineer','Reach a 1800 puzzle rating','1800 puzzle rating — the view up here is great.',0,(s,p)=>[p.rating,1800]],
+  ['mate','king','Mate Maker','Solve 25 checkmate puzzles','25 checkmates delivered. Kings fear you.',0,s=>[s.mates,25]],
+  ['superfan','heart','Superfan','Star 5 favourite games','Five favourite games. You\'ve got taste.',0,(s,p,f)=>[f,5]],
+];
+const STK_KEY='stickers_v1';
+function stickerStore(){
+  let st=null; try{ st=JSON.parse(localStorage.getItem(STK_KEY)||'null'); }catch(e){}
+  if(!st){ // first run: count what you've already done, and unlock it quietly (no toast storm)
+    st={got:{},stats:{reviews:0,brilliants:0,mates:0},seen:[]};
+    for(const h of loadHistory()){
+      if(!h.me||!h.data)continue;
+      st.stats.reviews++; st.seen.push(hashStr(h.key));
+      st.stats.brilliants+=h.data.filter(d=>d&&d.cat==='brilliant'&&d.moverWhite===(h.me==='w')).length;
+    }
+    for(const [id,,,,,,prog] of STICKERS){ if(prog){ const [a,b]=prog(st.stats,pzProfile(),loadFavs().length); if(a>=b)st.got[id]=Date.now(); } }
+    try{ localStorage.setItem(STK_KEY,JSON.stringify(st)); }catch(e){}
+  }
+  return st;
+}
+function saveStickers(st){ try{ localStorage.setItem(STK_KEY,JSON.stringify(st)); }catch(e){} }
+function ticketHtml(s,locked){
+  return `<div class="tix${s[5]?' gold':''}${locked?' lock':''}"><div class="in"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">${STK_ICON[s[1]]}</svg></div></div>`;
+}
+/* unlock: save, then a toast with the ticket and Pawnzo's line (queued if several at once) */
+const stickerQueue=[];
+function unlockSticker(st,id){
+  if(st.got[id])return;
+  st.got[id]=Date.now(); saveStickers(st);
+  stickerQueue.push(id); if(stickerQueue.length===1)showStickerToast();
+}
+function showStickerToast(){
+  const id=stickerQueue[0]; if(!id)return;
+  const s=STICKERS.find(x=>x[0]===id);
+  const el=document.createElement('div'); el.className='stk-toast';
+  el.innerHTML=`${ticketHtml(s,false)}<div class="stk-txt"><small>STICKER UNLOCKED</small><b>${s[2]}</b><span>${esc(s[4])}</span></div>${pawnzoFace('wow')}`;
+  document.body.appendChild(el);
+  funSound('chime'); setTimeout(()=>neonBurstAt(el.querySelector('.tix'),70),120);
+  const done=()=>{ if(!el.isConnected)return; el.classList.add('out'); setTimeout(()=>{ el.remove(); stickerQueue.shift(); showStickerToast(); },300); };
+  el.onclick=done; setTimeout(done,3600);
+  if(document.querySelector('.tabs button.active')?.dataset.tab==='history')renderHistory();
+}
+/* checks — called after a review of YOUR game, after a rated puzzle, and after starring a game */
+function stickersAfterReview(){
+  const me=currentMeSide; if(!me||!reviewData||!reviewAccuracy||!fullHistory)return; // only your own imported games count
+  const st=stickerStore(), white=me==='w', mine=reviewData.filter(d=>d&&d.moverWhite===white);
+  const brill=mine.filter(d=>d.cat==='brilliant').length, clowns=mine.filter(d=>d.cat==='blunder').length, acc=reviewAccuracy[me];
+  const key=hashStr(gameKey());
+  if(!st.seen.includes(key)){ st.seen.push(key); if(st.seen.length>2000)st.seen.shift(); st.stats.reviews++; st.stats.brilliants+=brill; saveStickers(st); }
+  const res=gameMeta&&gameMeta.result, won=res&&res!=='1/2-1/2'&&((res==='1-0')===white);
+  const myWin=cp=>white?winPct(cp):100-winPct(cp);
+  const wasLosing=reviewEvals&&reviewEvals.some((cp,i)=>i>=10&&myWin(cp)<20);
+  const u=id=>unlockSticker(st,id);
+  if(st.stats.reviews>=1)u('opening');
+  if(st.stats.brilliants>=1)u('brilliant');
+  if(st.stats.brilliants>=10)u('ringmaster');
+  if(mine.length>=20&&clowns===0)u('honkfree');
+  if(acc!=null&&acc>=95&&mine.length>=15)u('bullseye');
+  if(won&&wasLosing)u('tightrope');
+  if(won&&clowns>=3)u('college');
+  if(st.stats.reviews>=25)u('juggler');
+}
+function stickersAfterPuzzle(cleanMate){
+  const st=stickerStore(), p=pzProfile();
+  if(cleanMate){ st.stats.mates++; saveStickers(st); }
+  const u=id=>unlockSticker(st,id);
+  if(p.best>=10)u('fire'); if(p.best>=25)u('torch');
+  if(p.solved>=10)u('rookie'); if(p.solved>=100)u('pro'); if(p.solved>=500)u('legend');
+  if(p.rating>=1800)u('mountain'); if(st.stats.mates>=25)u('mate');
+}
+function stickersAfterFav(){ if(loadFavs().length>=5)unlockSticker(stickerStore(),'superfan'); }
+function renderStickers(){
+  const st=stickerStore(), p=pzProfile(), nf=loadFavs().length, n=Object.keys(st.got).length;
+  document.getElementById('histHint').textContent='Earned from your own imported games, puzzles and the app. Collect them all!';
+  document.getElementById('histStats').innerHTML=`<div class="stk-sum"><b>${n} / ${STICKERS.length}</b> collected
+    <div class="stk-bar"><i style="width:${Math.round(n/STICKERS.length*100)}%"></i></div></div>`;
+  document.getElementById('histClear').style.display='none';
+  document.getElementById('histList').innerHTML=`<div class="stk-grid">${STICKERS.map(s=>{
+    const got=st.got[s[0]], prog=!got&&s[6]?s[6](st.stats,p,nf):null;
+    const sub=got?new Date(got).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})
+      :prog?`<span class="stk-prog"><i style="width:${Math.min(100,Math.round(prog[0]/prog[1]*100))}%"></i></span>${Math.min(prog[0],prog[1])}/${prog[1]}`:'';
+    return `<div class="stk-item${got?'':' locked'}" title="${esc(s[3])}">${ticketHtml(s,!got)}<b>${s[2]}</b><small>${got?'':esc(s[3])}</small><em>${sub}</em></div>`;
+  }).join('')}</div>`;
 }
 function renderFavorites(favs){
   document.getElementById('histHint').textContent=favs.length
