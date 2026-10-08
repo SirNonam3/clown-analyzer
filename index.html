@@ -8,7 +8,8 @@
 <meta property="og:description" content="How many Clown moves 🤡 did you play? Analyze any chess game free — accuracy, estimated Elo, key moments.">
 <meta property="og:type" content="website">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0d0f1a">
+<meta name="theme-color" content="#090a16">
+<script>/* saved app colours before first paint (no flash) */try{var u=JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}');if(u.theme==='violet')document.documentElement.dataset.theme='violet';}catch(e){}</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -53,9 +54,9 @@
   .sq.lastmove::after{content:"";position:absolute;inset:0;background:var(--move)}
   .sq .dot{position:absolute;width:30%;height:30%;border-radius:50%;background:#0003;z-index:3}
   .sq .ring{position:absolute;inset:6%;border-radius:50%;border:5px solid #0003;z-index:3}
-  .piece{z-index:4;position:relative;text-shadow:0 1px 2px #0006}
-  .piece.w{color:#fff;-webkit-text-stroke:1.4px #333}
-  .piece.b{color:#222}
+  /* pieces are SVG images (pieces/<set>/wK.svg …) — Settings → Pieces */
+  .piece{z-index:4;position:relative;width:100%;height:100%;background:center/90% no-repeat;
+         filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35));pointer-events:none}
   #board{touch-action:none} /* allow pointer-drag on touch screens */
   .drag-clone{position:fixed;display:flex;align-items:center;justify-content:center;
               pointer-events:none;z-index:1000;line-height:1;filter:drop-shadow(0 4px 6px #000a)}
@@ -127,12 +128,12 @@
   .hl-box{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .hl-chip{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border-radius:6px;
            padding:4px 8px;font-size:12px;cursor:pointer;font-weight:600}
-  .hl-chip:hover{background:#3a3e45}
+  .hl-chip:hover{background:var(--border)}
   .km-box{background:var(--panel2);border-radius:8px;padding:8px 10px;margin-bottom:10px}
   .km-title{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:.5px}
   .km-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 4px;
           border-radius:5px;font-size:12px;cursor:pointer}
-  .km-row:hover{background:#3a3e45}
+  .km-row:hover{background:var(--border)}
   .km-mv{font-weight:700;white-space:nowrap}
   .km-desc{color:var(--muted);text-align:right}
   /* review summary table */
@@ -150,32 +151,47 @@
     border:3px solid #1e1f22;z-index:6;box-shadow:0 2px 8px #000a}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
 <style id="theme">
-/* ===== Brand theme: "Midnight Violet" — our own identity ===== */
+/* ===== App colours: "Neon Night" (default) · "Midnight Violet" (Settings → App colours) ===== */
 :root{
-  --bg:#0d0f1a; --panel:#151827; --panel2:#1e2235; --border:#2b3049;
-  --text:#eceef8; --muted:#9299b3;
-  --light:#c9c3d8; --dark:#6d6199;            /* signature lavender board — dimmed for long sessions */
-  --accent:#8b7cf8; --accent2:#4fd1c5;
+  --bg:#090a16; --panel:#12142b; --panel2:#1a1d3d; --border:#2e3163;
+  --text:#eef0ff; --muted:#9aa0c8;
+  --light:#c9c3d8; --dark:#6d6199; --move:#d9b25c4a; /* board colours: Settings → Board */
+  --accent:#ff3b7f; --accent2:#8b5cf6;
   --good:#4ade80; --bad:#f0647c; --warn:#f5b74e;
-  --sel:#d9b25c; --move:#d9b25c4a;
+  --sel:#d9b25c;
+  --grad:linear-gradient(135deg,#ff3b7f,#8b5cf6);           /* buttons, active tab, current move */
+  --grad-shadow:0 2px 12px #ff3b7f44; --grad-shadow-hover:0 4px 18px #ff3b7f66; --tab-glow:0 0 14px #ff3b7f55;
+  --title-grad:linear-gradient(90deg,#ff5c93 0%,#a78bfa 100%); --title-font:'Righteous','Inter',sans-serif;
+  --page-bg:radial-gradient(1100px 520px at 72% -10%,#2a1145 0%,transparent 60%),linear-gradient(180deg,#090a16,#07080f);
+  --head-bg:rgba(9,10,22,.82); --navbar-bg:rgba(13,14,34,.96);
+  --panel-grad:linear-gradient(180deg,#14163a,#10122b); --card-grad:linear-gradient(135deg,#1c1e45,#15173a);
+  --field:#0d0f24; --focus:#ff3b7f2e; --progress:linear-gradient(90deg,#ff3b7f,#8b5cf6);
+  --panel-shadow:0 0 0 1px #ff3b7f14,0 12px 44px #0008;
 }
-/* softer pieces — no glare on long sessions */
-.piece.w{color:#f2efe6;-webkit-text-stroke:1.4px #3a3a42}
-.piece.b{color:#26242e}
-body{font-family:'Inter','Segoe UI',system-ui,sans-serif;
-  background:radial-gradient(1100px 520px at 72% -10%, #23204a 0%, transparent 60%),
-             linear-gradient(180deg,#0d0f1a,#0b0d15);
-  min-height:100vh}
+:root[data-theme="violet"]{
+  --bg:#0d0f1a; --panel:#151827; --panel2:#1e2235; --border:#2b3049;
+  --text:#eceef8; --muted:#9299b3; --accent:#8b7cf8; --accent2:#4fd1c5;
+  --grad:linear-gradient(135deg,#8b7cf8,#655ae8);
+  --grad-shadow:0 2px 12px #655ae044; --grad-shadow-hover:0 4px 16px #655ae066; --tab-glow:0 2px 12px #8b7cf855;
+  --title-grad:linear-gradient(90deg,#a99cff 0%,#4fd1c5 100%); --title-font:'Inter',sans-serif;
+  --page-bg:radial-gradient(1100px 520px at 72% -10%,#23204a 0%,transparent 60%),linear-gradient(180deg,#0d0f1a,#0b0d15);
+  --head-bg:rgba(13,15,26,.82); --navbar-bg:rgba(18,20,34,.96);
+  --panel-grad:linear-gradient(180deg,#161a2b,#131624); --card-grad:linear-gradient(135deg,#1d2138,#181c2e);
+  --field:#0f1220; --focus:#8b7cf82e; --progress:linear-gradient(90deg,#8b7cf8,#4fd1c5);
+  --panel-shadow:0 12px 44px #0007;
+}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--page-bg);min-height:100vh}
 /* header */
-header{position:sticky;top:0;z-index:50;background:rgba(13,15,26,.82);
+header{position:sticky;top:0;z-index:50;background:var(--head-bg);
   backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px 22px}
 header h1{font-weight:800;letter-spacing:.3px;font-size:19px}
 header h1{display:flex;align-items:center;gap:9px;margin:0}
 header h1 .logo-img{width:34px;height:34px;border-radius:9px;box-shadow:0 2px 10px #ff3b5c33;flex:0 0 auto}
-header h1 .logo-text{background:linear-gradient(90deg,#a99cff 0%,#4fd1c5 100%);
+header h1 .logo-text{background:var(--title-grad);font-family:var(--title-font);font-weight:400;letter-spacing:.6px;
   -webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme="violet"] header h1 .logo-text{font-weight:800;letter-spacing:.3px}
 header .status{background:var(--panel2);border:1px solid var(--border);color:var(--muted);
   padding:4px 12px;border-radius:999px;font-weight:600;font-size:11px}
 .donate{background:linear-gradient(135deg,#f5b74e,#e8875a);color:#221605;font-weight:800;
@@ -187,38 +203,37 @@ header .status{background:var(--panel2);border:1px solid var(--border);color:var
 .tabs{background:var(--panel2);padding:4px;border-radius:12px;gap:4px}
 .tabs button{background:transparent;border-radius:9px;font-weight:600;transition:color .15s}
 .tabs button:hover{color:var(--text)}
-.tabs button.active{background:linear-gradient(135deg,#8b7cf8,#655ae8);color:#fff;
-  box-shadow:0 2px 12px #8b7cf855}
+.tabs button.active{background:var(--grad);color:#fff;box-shadow:var(--tab-glow)}
 /* buttons */
-button.btn{background:linear-gradient(135deg,#8b7cf8,#655ae8);border-radius:10px;
-  font-weight:700;box-shadow:0 2px 12px #655ae044;transition:transform .12s,box-shadow .12s}
-button.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px #655ae066;filter:none}
+button.btn{background:var(--grad);border-radius:10px;
+  font-weight:700;box-shadow:var(--grad-shadow);transition:transform .12s,box-shadow .12s}
+button.btn:hover{transform:translateY(-1px);box-shadow:var(--grad-shadow-hover);filter:none}
 button.btn.sec{background:var(--panel2);border:1px solid var(--border);box-shadow:none}
 button.btn.sec:hover{border-color:var(--accent);transform:none}
 .nav button{background:var(--panel2);border:1px solid var(--border);border-radius:10px;
   transition:background .15s,border-color .15s}
-.nav button:hover{background:linear-gradient(135deg,#8b7cf8,#655ae8);border-color:transparent}
+.nav button:hover{background:var(--grad);border-color:transparent}
 /* surfaces */
-.panel{border-radius:16px;background:linear-gradient(180deg,#161a2b,#131624);
-  box-shadow:0 12px 44px #0007}
+.panel{border-radius:16px;background:var(--panel-grad);box-shadow:var(--panel-shadow)}
 .bestmove{border:1px solid var(--border);border-radius:12px}
 #board{border-radius:12px;box-shadow:0 16px 48px #000b,0 0 0 1px #ffffff10}
-#evalbar{border-radius:8px;background:#0a0c14;box-shadow:inset 0 0 0 1px #ffffff12}
+#evalbar{border-radius:8px;background:#07080f;box-shadow:inset 0 0 0 1px #ffffff12}
 #evalfill{background:linear-gradient(180deg,#e9e6f2,#c9c3d8)}
-.acc-box{background:linear-gradient(135deg,#1d2138,#181c2e);border:1px solid var(--border);border-radius:14px}
+.acc-box{background:var(--card-grad);border:1px solid var(--border);border-radius:14px}
 .rs-col,.km-box{border:1px solid var(--border);border-radius:12px}
 .graph-box{border-radius:12px}
 .hl-chip{border:1px solid var(--border);border-radius:9px}
-.movebadge{border-color:#0d0f1a}
-.moves .mv.cur{background:linear-gradient(135deg,#8b7cf8,#655ae8)}
+.movebadge{border-color:var(--bg)}
+.moves .mv.cur{background:var(--grad)}
 /* inputs */
-textarea,input[type=text],select{border-radius:10px;background:#0f1220}
+textarea,input[type=text],select{border-radius:10px;background:var(--field)}
 textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);
-  box-shadow:0 0 0 3px #8b7cf82e}
-/* board details */
-.sq .coord{font-weight:800;opacity:.6}
+  box-shadow:0 0 0 3px var(--focus)}
+/* board details: coordinates in the opposite square colour, like lichess */
+.sq .coord{font-weight:800;opacity:.8}
+.sq.l .coord{color:var(--dark)} .sq.d .coord{color:var(--light)}
 #progress{border-radius:4px}
-#progressbar{background:linear-gradient(90deg,#8b7cf8,#4fd1c5)}
+#progressbar{background:var(--progress)}
 .sq.wrong{background:var(--bad)!important}
 .src{display:inline-block;font-size:9px;font-weight:800;padding:1px 4px;border-radius:4px;vertical-align:middle;color:#fff}
 .src-cc{background:#6b9b37} .src-li{background:#7b61a8}
@@ -227,7 +242,8 @@ textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var
 .credits a:hover{color:var(--accent)}
 /* tabs with icons */
 .tabs button{display:flex;align-items:center;justify-content:center;gap:6px}
-.tabs .ti{font-size:14px;line-height:1}
+.tabs .ti{width:17px;height:17px;flex:0 0 auto}
+svg.ti,svg.ui-ico{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 /* safe areas (phone notches / home indicator) */
 header{padding-top:max(12px,env(safe-area-inset-top));padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
 /* big screens: larger header (height must match --hdr: 14 + 46 + 14 + 1px border ≈ 76) */
@@ -243,9 +259,9 @@ header{padding-top:max(12px,env(safe-area-inset-top));padding-left:max(22px,env(
 @media(max-width:640px){
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   .tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;border-radius:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
-        background:rgba(18,20,34,.96);backdrop-filter:blur(10px);border-top:1px solid var(--border);gap:2px}
+        background:var(--navbar-bg);backdrop-filter:blur(10px);border-top:1px solid var(--border);gap:2px}
   .tabs button{flex-direction:column;gap:2px;padding:6px 2px;font-size:10px;border-radius:10px}
-  .tabs .ti{font-size:18px}
+  .tabs .ti{width:22px;height:22px}
   .tabs button.active{box-shadow:none}
   header{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));gap:8px}
   header h1{font-size:16px}
@@ -289,7 +305,7 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .hist-views button[data-hv="fav"].active{color:#f5c84e}
 /* puzzles */
 .pz-stats{display:flex;gap:8px;margin-bottom:10px}
-.pz-stat{flex:1;background:linear-gradient(135deg,#1d2138,#181c2e);border:1px solid var(--border);border-radius:12px;
+.pz-stat{flex:1;background:var(--card-grad);border:1px solid var(--border);border-radius:12px;
   padding:8px 6px;text-align:center}
 .pz-num{font-size:22px;font-weight:800;line-height:1.1}
 .pz-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -316,6 +332,33 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .donate.premium{border:none;cursor:pointer;font-family:inherit}
 .modal{position:fixed;inset:0;z-index:200;background:rgba(5,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
 .modal[hidden]{display:none}
+/* header ⚙ + settings sheet */
+header h1{margin-right:auto}
+.hdr-btn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;padding:0;transition:color .15s,border-color .15s}
+.hdr-btn:hover{color:var(--text);border-color:var(--accent)}
+.hdr-btn .ui-ico{width:20px;height:20px}
+.set-sheet{max-height:90vh;overflow:auto;max-width:480px}
+.set-head{display:flex;align-items:center;justify-content:space-between}
+.set-head h2{margin:0}
+.set-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;margin:16px 0 7px}
+.set-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.set-grid-2{grid-template-columns:repeat(2,1fr)}
+.set-opt{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:6px 6px 5px;cursor:pointer;
+  color:var(--text);font:600 11px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.set-opt:hover{border-color:var(--muted)}
+.set-opt.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
+.set-opt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.set-sw{width:100%;border-radius:7px;overflow:hidden;display:grid}
+.set-sw.b{grid-template-columns:repeat(4,1fr);aspect-ratio:2/1}
+.set-sw.p{grid-template-columns:1fr 1fr;aspect-ratio:2/1}
+.set-sw.p i{background:center/86% no-repeat}
+.set-sw.t{aspect-ratio:4/1;border:1px solid #ffffff14}
+@media(max-width:400px){.set-grid{grid-template-columns:repeat(3,1fr)}}
+/* board themes with extra decoration */
+#board.bt-harlequin .sq.d{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 .8 9.2 5 5 9.2.8 5z' fill='%23fff' opacity='.11'/%3E%3C/svg%3E");background-size:100% 100%}
+#board.bt-neon .sq{box-shadow:inset 0 0 0 1px #ff3b7f2e}
+#board.bt-neon .sq .coord{color:#ff9cc0}
 .sheet{background:var(--panel);border:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:440px;
   padding:20px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px #000a}
 @media(min-width:641px){.modal{align-items:center}.sheet{border-radius:18px}}
@@ -336,6 +379,7 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
   <span class="status" id="engineStatus">Loading engine…</span>
   <a class="donate" id="supportLink" href="#" target="_blank" rel="noopener" title="Support the site" style="display:none">☕ Support</a>
   <button class="donate premium" id="premiumBtn" style="display:none">⭐ Go ad-free</button>
+  <button class="hdr-btn" id="settingsBtn" title="Settings — colours, board, pieces" aria-label="Settings"><svg class="ui-ico" viewBox="0 0 24 24"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg></button>
 </header>
 
 <div class="wrap">
@@ -351,11 +395,12 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 
   <div class="panel">
     <nav class="tabs">
-      <button data-tab="play" class="active"><span class="ti">♟</span><span class="tl">Play</span></button>
-      <button data-tab="chesscom"><span class="ti">⇩</span><span class="tl">Import</span></button>
-      <button data-tab="review"><span class="ti">📊</span><span class="tl">Review</span></button>
-      <button data-tab="puzzles"><span class="ti">🧩</span><span class="tl">Puzzles</span></button>
-      <button data-tab="history"><span class="ti">🕘</span><span class="tl">History</span></button>
+      <!-- icons: Tabler (MIT) — https://tabler.io/icons -->
+      <button data-tab="play" class="active"><svg class="ti" viewBox="0 0 24 24"><path d="M8 16l-1.447 .724a1 1 0 0 0 -.553 .894v2.382h12v-2.382a1 1 0 0 0 -.553 -.894l-1.447 -.724h-8"/><path d="M9 3l1 3l-3.491 2.148a1 1 0 0 0 .524 1.852h2.967l-2.073 6h7.961l.112 -5c0 -3 -1.09 -5.983 -4 -7c-1.94 -.678 -2.94 -1.011 -3 -1"/></svg><span class="tl">Play</span></button>
+      <button data-tab="chesscom"><svg class="ti" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3"/></svg><span class="tl">Import</span></button>
+      <button data-tab="review"><svg class="ti" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M20 18v3"/><path d="M16 16v5"/><path d="M12 13v8"/><path d="M8 16v5"/><path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"/></svg><span class="tl">Review</span></button>
+      <button data-tab="puzzles"><svg class="ti" viewBox="0 0 24 24"><path d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1"/></svg><span class="tl">Puzzles</span></button>
+      <button data-tab="history"><svg class="ti" viewBox="0 0 24 24"><path d="M12 8l0 4l2 2"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg><span class="tl">History</span></button>
     </nav>
 
     <!-- analysis (always visible) -->
@@ -482,6 +527,17 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
   </div>
 </div>
 
+<!-- SETTINGS (⚙ in the header): app colours, board, pieces -->
+<div id="settings" class="modal" hidden>
+  <div class="sheet set-sheet">
+    <div class="set-head"><h2>Settings</h2>
+      <button class="hdr-btn" id="settingsClose" aria-label="Close"><svg class="ui-ico" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg></button></div>
+    <div class="set-title">APP COLOURS</div><div class="set-grid set-grid-2" id="setTheme"></div>
+    <div class="set-title">BOARD</div><div class="set-grid" id="setBoard"></div>
+    <div class="set-title">PIECES</div><div class="set-grid" id="setPieces"></div>
+  </div>
+</div>
+
 <!-- PREMIUM PAYWALL (store apps only) -->
 <div id="paywall" class="modal" hidden>
   <div class="sheet">
@@ -508,6 +564,8 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
   · Game data via Chess.com &amp; Lichess public APIs
   · Openings: <a href="https://github.com/lichess-org/chess-openings" target="_blank" rel="noopener">lichess chess-openings</a> (CC0)
   · Puzzles: <a href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener">Lichess puzzle database</a> (CC0)
+  · <a href="pieces/LICENSES.md" target="_blank" rel="noopener">Piece sets</a> from Lichess (GPL / MIT / Apache / CC BY / CC0)
+  · Icons: <a href="https://tabler.io/icons" target="_blank" rel="noopener">Tabler</a> (MIT)
   · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
   <span id="adPrivacyWrap" style="display:none">· <a href="#" id="adPrivacy">Ad privacy choices</a></span>
 </footer>
@@ -876,10 +934,51 @@ let reviewBookHits=null; // per-position: true if found in lichess cloud (deep b
 let gameMeta=null;       // {opening, eco, bookPlies}
 
 const FILES=['a','b','c','d','e','f','g','h'];
-const GLYPH={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
 
 /* ---------- Board rendering ---------- */
 const boardEl=document.getElementById('board');
+
+/* ---------- Appearance (⚙ Settings): app colours, board, pieces — remembered per device ---------- */
+const PIECE_SETS=[ // pieces/<folder> — every set is free for commercial use (pieces/LICENSES.md)
+  ['cburnett','Classic'],['merida','Merida'],['mpchess','MPChess'],['chessnut','Chessnut'],
+  ['spatial','Spatial'],['papercut','Papercut'],['fantasy','Fantasy'],['celtic','Celtic'],
+  ['rhosgfx','Rhos'],['firi','Firi'],['kiwen-suwi','Kiwen-suwi'],['totoy','Totoy']];
+const BOARD_THEMES=[ // id, name, light, dark, last-move tint (extra decoration: #board.bt-<id> in CSS)
+  ['lavender','Lavender','#c9c3d8','#6d6199','#d9b25c4a'], ['bigtop','Big Top','#f2e3cc','#b9474f','#f5c84e77'],
+  ['harlequin','Harlequin','#efe3d3','#7c2f45','#f5c84e66'], ['rose','Rose','#ead7da','#a65a6c','#f5c84e66'],
+  ['wood','Wood','#f0d9b5','#b58863','#cdd26a99'], ['green','Green','#eeeed2','#769656','#f6f66988'],
+  ['ice','Ice blue','#dee3e6','#8ca2ad','#9bc70066'], ['neon','Neon','#343a6e','#21254a','#ff3b7f44']];
+const APP_THEMES=[['neon','Neon Night','linear-gradient(90deg,#090a16,#ff3b7f,#8b5cf6)'],
+  ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)']];
+const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon'};
+try{ Object.assign(uiPrefs,JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}')); }catch(e){}
+function pieceSrc(color,type,set){ return `pieces/${set||uiPrefs.pieces}/${color}${type.toUpperCase()}.svg`; }
+function preloadPieces(set){ // resolves when all 12 images are ready (or after 2 s)
+  const all=[]; for(const c of 'wb')for(const t of 'kqrbnp'){ const i=new Image(); i.src=pieceSrc(c,t,set);
+    all.push(i.decode?i.decode().catch(()=>{}):Promise.resolve()); }
+  return Promise.race([Promise.all(all), new Promise(r=>setTimeout(r,2000))]);
+}
+function applyAppearance(){
+  if(!PIECE_SETS.some(p=>p[0]===uiPrefs.pieces))uiPrefs.pieces='cburnett';
+  const b=BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0]; uiPrefs.board=b[0];
+  if(!APP_THEMES.some(t=>t[0]===uiPrefs.theme))uiPrefs.theme='neon';
+  const root=document.documentElement;
+  root.style.setProperty('--light',b[2]); root.style.setProperty('--dark',b[3]); root.style.setProperty('--move',b[4]);
+  BOARD_THEMES.forEach(t=>boardEl.classList.toggle('bt-'+t[0],t[0]===b[0]));
+  if(uiPrefs.theme==='neon')delete root.dataset.theme; else root.dataset.theme=uiPrefs.theme;
+  const tc=document.querySelector('meta[name="theme-color"]'); if(tc)tc.content=uiPrefs.theme==='violet'?'#0d0f1a':'#090a16';
+  preloadPieces(uiPrefs.pieces);
+}
+async function setAppearance(key,val){
+  uiPrefs[key]=val;
+  try{ localStorage.setItem('uiPrefs_v1',JSON.stringify(uiPrefs)); }catch(e){}
+  renderSettings();
+  if(key==='pieces') await preloadPieces(val); // swap only once the new set is loaded (no blank board)
+  applyAppearance(); render();
+  if(lastArrows&&arrowsWanted()>0)drawArrows(lastArrows);
+}
+applyAppearance();
+
 /* Corner quality badge sized from the real rendered square (chess.com-style). */
 function boardBadge(cell,meta){
   const cs=boardEl.getBoundingClientRect().width/8;
@@ -915,7 +1014,7 @@ function render(){
       if(cell){
         const p=document.createElement('span');
         p.className='piece '+(cell.color==='w'?'w':'b');
-        p.textContent=GLYPH[cell.type];
+        p.style.backgroundImage=`url("${pieceSrc(cell.color,cell.type)}")`;
         sq.appendChild(p);
       }
       if(last && (last.from===sqName||last.to===sqName)) sq.classList.add('lastmove');
@@ -2126,19 +2225,25 @@ function catCounts(){
 
 /* ---------- Share-as-image report card ---------- */
 const LOGO_IMG=new Image(); LOGO_IMG.src='logo.svg'; // preloaded for the card title
+const CARD_THEME={ // report card colours follow Settings → App colours
+  neon:{bg0:'#14102f',bg1:'#07080f',glow:'255,59,127',t0:'#ff5c93',t1:'#a78bfa',accent:'#ff7aa8',
+    titleFont:'400 40px Righteous,Inter,Segoe UI,sans-serif'},
+  violet:{bg0:'#12142a',bg1:'#0b0d15',glow:'139,124,248',t0:'#a99cff',t1:'#4fd1c5',accent:'#8b7cf8',
+    titleFont:'800 38px Inter,Segoe UI,sans-serif'}};
 function buildReportCard(){
   const W=720,H=920,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');
+  const th=CARD_THEME[uiPrefs.theme]||CARD_THEME.neon;
   // background + brand glow
-  const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#12142a');bg.addColorStop(1,'#0b0d15');
+  const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,th.bg0);bg.addColorStop(1,th.bg1);
   x.fillStyle=bg;x.fillRect(0,0,W,H);
   const glow=x.createRadialGradient(W*0.75,60,10,W*0.75,60,420);
-  glow.addColorStop(0,'rgba(139,124,248,0.22)');glow.addColorStop(1,'rgba(139,124,248,0)');
+  glow.addColorStop(0,`rgba(${th.glow},0.22)`);glow.addColorStop(1,`rgba(${th.glow},0)`);
   x.fillStyle=glow;x.fillRect(0,0,W,H);
   // title
-  const tg=x.createLinearGradient(W*0.2,0,W*0.8,0);tg.addColorStop(0,'#a99cff');tg.addColorStop(1,'#4fd1c5');
+  const tg=x.createLinearGradient(W*0.2,0,W*0.8,0);tg.addColorStop(0,th.t0);tg.addColorStop(1,th.t1);
   x.textAlign='center';
-  x.font='800 38px Inter,Segoe UI,sans-serif';x.fillStyle=tg;
+  x.font=th.titleFont;x.fillStyle=tg;
   if(LOGO_IMG.complete && LOGO_IMG.naturalWidth){ // logo + title, centred together
     const title='CLOWN ANALYZER', tw=x.measureText(title).width, L=54, gap=14, start=(W-(L+gap+tw))/2;
     x.save(); x.beginPath();
@@ -2154,7 +2259,7 @@ function buildReportCard(){
   x.fillText(`${wName}  vs  ${bName}`,W/2,148);
   let y=176;
   if(gameMeta&&gameMeta.result){x.font='600 16px Inter,sans-serif';x.fillStyle='#9299b3';x.fillText(gameMeta.result,W/2,y);y+=28;}
-  if(gameMeta&&gameMeta.opening){x.font='600 15px Inter,sans-serif';x.fillStyle='#8b7cf8';x.fillText('📖 '+gameMeta.opening,W/2,y);}
+  if(gameMeta&&gameMeta.opening){x.font='600 15px Inter,sans-serif';x.fillStyle=th.accent;x.fillText('📖 '+gameMeta.opening,W/2,y);}
   // accuracy blocks
   const drawAcc=(cx,label,v)=>{
     x.font='600 15px Inter,sans-serif';x.fillStyle='#9299b3';x.fillText(label,cx,258);
@@ -2867,6 +2972,22 @@ async function openPaywall(){
     else msg.textContent=r.cancelled?'':('Purchase failed: '+(r.error||'unknown error'));
   });
 }
+/* ⚙ Settings sheet */
+function renderSettings(){
+  const set=document.getElementById('settings'); if(set.hidden)return;
+  const L=BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0];
+  const opt=(key,id,label,sw)=>`<button class="set-opt${uiPrefs[key]===id?' on':''}" data-k="${key}" data-v="${id}">${sw}<span>${label}</span></button>`;
+  document.getElementById('setTheme').innerHTML=APP_THEMES.map(([id,name,g])=>
+    opt('theme',id,name,`<i class="set-sw t" style="background:${g}"></i>`)).join('');
+  document.getElementById('setBoard').innerHTML=BOARD_THEMES.map(([id,name,l,d])=>
+    opt('board',id,name,`<i class="set-sw b">${[l,d,l,d,d,l,d,l].map(c=>`<i style="background:${c}"></i>`).join('')}</i>`)).join('');
+  document.getElementById('setPieces').innerHTML=PIECE_SETS.map(([id,name])=>
+    opt('pieces',id,name,`<i class="set-sw p"><i style="background-color:${L[3]};background-image:url('${pieceSrc('w','n',id)}')"></i><i style="background-color:${L[2]};background-image:url('${pieceSrc('b','k',id)}')"></i></i>`)).join('');
+  set.querySelectorAll('.set-opt').forEach(b=>b.onclick=()=>setAppearance(b.dataset.k,b.dataset.v));
+}
+document.getElementById('settingsBtn').onclick=()=>{ document.getElementById('settings').hidden=false; renderSettings(); };
+document.getElementById('settingsClose').onclick=()=>{ document.getElementById('settings').hidden=true; };
+document.getElementById('settings').onclick=e=>{ if(e.target.id==='settings')e.currentTarget.hidden=true; };
 document.getElementById('premiumBtn').onclick=()=>{ if(window.NativeBridge)openPaywall(); };
 document.getElementById('pwClose').onclick=()=>{ document.getElementById('paywall').hidden=true; };
 document.getElementById('paywall').onclick=e=>{ if(e.target.id==='paywall')e.currentTarget.hidden=true; };
@@ -2887,6 +3008,8 @@ document.getElementById('adPrivacy').onclick=e=>{ e.preventDefault(); if(window.
 window.addEventListener('native-back',()=>{
   const pw=document.getElementById('paywall');
   if(!pw.hidden){ pw.hidden=true; return; }
+  const st=document.getElementById('settings');
+  if(!st.hidden){ st.hidden=true; return; }
   if(puzzleMode){ document.getElementById('pzExit').click(); return; }
   const active=document.querySelector('.tabs button.active');
   if(active&&active.dataset.tab!=='play'){ switchTab('play'); return; }
