@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clown Analyzer — personality options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
+<style>
+  /* Neon Night — the app's current colours */
+  :root{--bg:#090a16;--panel:#12142b;--panel2:#1a1d3d;--border:#2e3163;--text:#eef0ff;--muted:#9aa0c8;--accent:#ff3b7f;
+    --grad:linear-gradient(135deg,#ff3b7f,#8b5cf6);--card:linear-gradient(135deg,#1c1e45,#15173a)}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1100px 520px at 72% -10%,#2a1145 0%,transparent 60%),linear-gradient(180deg,#090a16,#07080f);
+    color:var(--text);font-family:Inter,'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  h1{font-size:20px;margin:18px 20px 2px} h2{font-size:17px;margin:28px 20px 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 20px 12px;max-width:900px}
+  .bar{position:sticky;top:0;z-index:10;background:#090a16ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+    padding:10px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px}
+  .pick{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:0 20px}
+  .card{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;transition:border-color .15s,transform .12s}
+  .card:hover{transform:translateY(-2px)} .card.sel{border-color:var(--accent);box-shadow:0 0 0 3px #ff3b7f33}
+  .num{display:inline-block;min-width:22px;height:22px;border-radius:7px;background:var(--grad);color:#fff;text-align:center;font-size:12px;line-height:22px;margin-right:6px;font-weight:800}
+  .t{font-weight:800;font-size:15px;margin-bottom:2px} .d{color:var(--muted);font-size:12px;margin-bottom:8px}
+  /* names */
+  .hello{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .hello img,.hello svg{width:54px;height:54px;flex:0 0 auto}
+  .bubble{position:relative;background:#fff;color:#1b1638;border-radius:14px;padding:8px 11px;font-size:13px;font-weight:600;line-height:1.35}
+  .bubble::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-left:0;border-right-color:#fff}
+  /* moods */
+  .moods{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .mood{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;text-align:center;font-size:11.5px;font-weight:700}
+  .mood svg{width:100%;height:auto;display:block}
+  .mood span{display:block;color:var(--muted);font-weight:600;font-size:10.5px;margin-top:1px}
+  /* verdict mock */
+  .scen{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 10px}
+  .scen button{background:var(--panel2);color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font:600 12px Inter,sans-serif;cursor:pointer}
+  .scen button.on{background:var(--grad);color:#fff;border-color:transparent}
+  .verdict{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px}
+  .verdict svg{width:74px;height:74px;flex:0 0 auto}
+  .verdict .bubble{font-size:13.5px}
+  .vname{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.6px;margin-bottom:3px}
+  /* badges */
+  .rows{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:6px 10px}
+  .row{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0}
+  .row .n{margin-left:auto;font-weight:700;color:var(--muted)}
+  .bd{width:20px;height:20px;flex:0 0 auto;display:block}
+  .sqdemo{display:flex;gap:8px;margin-top:8px}
+  .sq{position:relative;width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .sq img{width:88%;height:88%}
+  .sq .bd{position:absolute;top:-7px;right:-7px;width:28px;height:28px;filter:drop-shadow(0 2px 4px #0009)}
+  /* where */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;padding:0 20px}
+  .chip{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:10px 12px;cursor:pointer;max-width:330px}
+  .chip.sel{border-color:var(--accent);box-shadow:0 0 0 3px #ff3b7f33}
+  .chip b{display:block;font-size:14px} .chip span{color:var(--muted);font-size:12px}
+  .chip b::before{content:"☐ ";color:var(--muted)} .chip.sel b::before{content:"☑ ";color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="bar"><b>Your picks:</b><span class="pick" id="pkName"></span><span class="pick" id="pkStyle"></span>
+  <span class="pick" id="pkVoice"></span><span class="pick" id="pkBadge"></span><span class="pick" id="pkWhere"></span></div>
+
+<h1>🤡 Clown Analyzer — personality options (step 2)</h1>
+<p class="sub">Click to choose. Reply with the numbers/letters you like, e.g. "name 4, style A, voice B, badges 3, everywhere" —
+  or suggest your own name and lines.</p>
+
+<h2>1 · The clown's name</h2>
+<p class="sub">He shows up in verdicts and reactions, so a short, sayable name works best.</p>
+<div class="grid" id="gName"></div>
+
+<h2>2 · Faces</h2>
+<p class="sub">The logo clown with six expressions — he reacts to what happens. Pick the full body or a bigger head-only sticker.</p>
+<div class="grid" id="gStyle" style="grid-template-columns:repeat(auto-fill,minmax(420px,1fr))"></div>
+
+<h2>3 · Voice</h2>
+<p class="sub">How he talks. Switch the situation to read more lines — the verdict card is how it would sit at the top of a review.</p>
+<div class="scen" id="scen"></div>
+<div class="grid" id="gVoice" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))"></div>
+
+<h2>4 · Move badges</h2>
+<p class="sub">The circles on the board and in the summary. Circus icons make the Clown move a real clown nose 🔴.</p>
+<div class="grid" id="gBadge"></div>
+
+<h2>5 · Where the clown appears</h2>
+<p class="sub">Pick as many as you like.</p>
+<div class="chips" id="gWhere"></div>
+<div style="height:50px"></div>
+
+<script>
+/* ---------- mascot (from logo.svg) with moods ---------- */
+const DEFS=`<defs>
+  <linearGradient id="piece" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#c3b9ff"/><stop offset="0.5" stop-color="#8f84f6"/><stop offset="1" stop-color="#4fd1c5"/></linearGradient>
+  <radialGradient id="nose" cx="0.38" cy="0.35" r="0.75"><stop offset="0" stop-color="#ff7a85"/><stop offset="1" stop-color="#e02f45"/></radialGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4458"/><stop offset="1" stop-color="#d81f3a"/></linearGradient>
+  <clipPath id="hatClip"><path d="M218 122 L294 122 L262 40 Z"/></clipPath>
+  <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter></defs>`;
+const BODY=`<g id="glow" fill="#ff3b5c" opacity="0.45" filter="url(#blur)"><circle cx="256" cy="180" r="74"/>
+  <path d="M200 246 L312 246 L298 270 C298 314 322 342 346 364 L380 384 L380 416 L132 416 L132 384 L166 364 C190 342 214 314 214 270 Z"/></g>
+  <circle cx="186" cy="150" r="22" fill="#ff3b4f"/><circle cx="173" cy="178" r="20" fill="#ff6a3d"/><circle cx="186" cy="205" r="17" fill="#e0283c"/>
+  <circle cx="326" cy="150" r="22" fill="#ff3b4f"/><circle cx="339" cy="178" r="20" fill="#ff6a3d"/><circle cx="326" cy="205" r="17" fill="#e0283c"/>
+  <g fill="url(#piece)"><circle cx="256" cy="180" r="68"/><rect x="188" y="244" width="136" height="26" rx="13"/>
+    <path d="M214 268 C214 312 190 340 166 364 L346 364 C322 340 298 312 298 268 Z"/>
+    <rect x="146" y="358" width="220" height="30" rx="12"/><rect x="128" y="382" width="256" height="34" rx="14"/></g>
+  <g clip-path="url(#hatClip)"><rect x="200" y="30" width="110" height="100" fill="#fff6ee"/>
+    <g fill="url(#red)"><path d="M200 118 L310 78 L310 96 L200 136 Z"/><path d="M200 84 L310 44 L310 62 L200 102 Z"/><path d="M200 50 L310 10 L310 28 L200 68 Z"/></g></g>
+  <circle cx="262" cy="40" r="15" fill="#ffd23f"/>
+  <path d="M256 257 L212 236 L212 278 Z" fill="url(#red)"/><path d="M256 257 L300 236 L300 278 Z" fill="url(#red)"/><circle cx="256" cy="257" r="11" fill="#ffd23f"/>
+  <path d="M206 150 A58 58 0 0 1 238 120" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity="0.4"/>`;
+const NOSE=`<circle cx="256" cy="200" r="18" fill="url(#nose)"/><circle cx="250" cy="194" r="5" fill="#fff" opacity="0.65"/>`;
+const INK='#1b1638';
+const diamondEyes=(px=0,py=0,pr=8)=>`<path d="M232 140 L246 170 L232 200 L218 170 Z" fill="#fff"/><path d="M280 140 L294 170 L280 200 L266 170 Z" fill="#fff"/>
+  <circle cx="${232+px}" cy="${170+py}" r="${pr}" fill="${INK}"/><circle cx="${280+px}" cy="${170+py}" r="${pr}" fill="${INK}"/>
+  <circle cx="${234.5+px}" cy="${167+py}" r="2.8" fill="#fff"/><circle cx="${282.5+px}" cy="${167+py}" r="2.8" fill="#fff"/>`;
+const star=(x,y,s,c='#ffd23f')=>`<path d="M${x} ${y-s} Q${x+s*.18} ${y-s*.18} ${x+s} ${y} Q${x+s*.18} ${y+s*.18} ${x} ${y+s} Q${x-s*.18} ${y+s*.18} ${x-s} ${y} Q${x-s*.18} ${y-s*.18} ${x} ${y-s}Z" fill="${c}"/>`;
+const FACES={
+  happy:diamondEyes()+`<path d="M220 212 Q256 254 292 212 Q256 230 220 212 Z" fill="#e02f45" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>`+NOSE,
+  laugh:`<path d="M219 176 Q232 158 245 176" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>
+    <path d="M267 176 Q280 158 293 176" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>
+    <path d="M208 180 q-7 11 0 16 q7 -5 0 -16z" fill="#7dd3fc"/><path d="M304 180 q-7 11 0 16 q7 -5 0 -16z" fill="#7dd3fc"/>
+    <path d="M214 206 Q256 284 298 206 Q256 222 214 206 Z" fill="#7a0f22" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+    <ellipse cx="256" cy="236" rx="15" ry="6" fill="#ff7a85"/>`+NOSE,
+  wow:`<path d="M214 136 Q232 122 250 136" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
+    <path d="M262 136 Q280 122 298 136" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="232" cy="168" r="16" fill="#fff"/><circle cx="280" cy="168" r="16" fill="#fff"/>
+    <circle cx="232" cy="168" r="6" fill="${INK}"/><circle cx="280" cy="168" r="6" fill="${INK}"/>
+    <circle cx="234" cy="165" r="2.3" fill="#fff"/><circle cx="282" cy="165" r="2.3" fill="#fff"/>
+    <ellipse cx="256" cy="238" rx="11" ry="14" fill="#7a0f22" stroke="#fff" stroke-width="5"/>`+NOSE
+    +star(168,96,16)+star(346,92,13)+star(352,232,11,'#ff9cc0')+star(160,250,9,'#ff9cc0'),
+  cool:`<path d="M194 160 L214 164 M318 160 L298 164" stroke="#14112b" stroke-width="5" stroke-linecap="round"/>
+    <rect x="210" y="154" width="42" height="28" rx="11" fill="#14112b"/><rect x="260" y="154" width="42" height="28" rx="11" fill="#14112b"/>
+    <rect x="248" y="161" width="16" height="6" rx="3" fill="#14112b"/>
+    <path d="M218 172 L232 160 M268 172 L282 160" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.65"/>
+    <path d="M224 214 Q256 246 288 214 Q256 226 224 214 Z" fill="#e02f45" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>`+NOSE
+    +star(340,92,17),
+  think:`<path d="M218 146 L244 146" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
+    <path d="M266 140 Q280 128 294 140" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`+diamondEyes(5,-8,7)
+    +`<path d="M238 230 Q252 222 272 230" fill="none" stroke="#e02f45" stroke-width="8" stroke-linecap="round"/>`+NOSE
+    +`<circle cx="326" cy="118" r="6" fill="#fff" opacity=".9"/><circle cx="341" cy="99" r="8" fill="#fff" opacity=".9"/><circle cx="359" cy="78" r="11" fill="#fff" opacity=".9"/>`,
+  sad:`<path d="M216 150 L242 140" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><path d="M296 150 L270 140" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`
+    +diamondEyes(0,7,7)+`<path d="M222 198 q-7 11 0 16 q7 -5 0 -16z" fill="#7dd3fc"/>
+    <path d="M222 244 Q256 212 290 244 Q256 232 222 244 Z" fill="#e02f45" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>`+NOSE,
+};
+const MOODS=[['happy','Happy','default'],['laugh','Laughing','you played a Clown move'],['wow','Amazed','brilliant move'],
+  ['cool','Cool','clean game / streak'],['think','Thinking','analysing'],['sad','Sad','rough game']];
+function mascot(mood,style){ // style 'A' full body, 'B' head-only sticker
+  const vb=style==='B'?'121 32 270 270':'96 8 320 430';
+  return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${DEFS}<g transform="translate(0 20)">${BODY}${FACES[mood]}</g></svg>`;
+}
+
+/* ---------- options ---------- */
+const NAMES=[['Pawnzo','Pawn + clown. "Pawnzo the Clown" — he IS the pawn in the logo.'],
+  ['Gambit','A chess word that sounds like a circus act.'],['Honk','Named after his favourite sound.'],
+  ['Pip','Tiny and cute — easy to say in any language.'],['Zuzu','Short for Zugzwang — cheeky and memorable.']];
+const STYLES=[['A','Full clown','His whole pawn body — good for big moments.'],['B','Head sticker','Bigger face, reads better at small sizes.']];
+const SCENES=[['clean','Clean game','cool'],['one','One Clown move','laugh'],['many','Rough game (4 Clown moves)','sad'],
+  ['brill','Brilliant found','wow'],['load','Analysing','think'],['empty','Empty history','happy'],['streak','Puzzle streak','cool']];
+const VOICES=[
+  ['A','Friendly coach','Warm and encouraging, with a little tease.',{
+    clean:'Clean game! Not a single Clown move — I\'m proud of you.',
+    one:'Just one slip on move 23. Everybody honks sometimes.',
+    many:'Rough one — 4 Clown moves. Let\'s look at them together, you\'ll get them next time.',
+    brill:'16.Qb8+ was brilliant! I didn\'t see that coming.',
+    load:'Let me take a good look at this game…',
+    empty:'No games yet — import one and I\'ll review it for you!',
+    streak:'5 in a row — you\'re on fire! 🔥'}],
+  ['B','Roast mode','Cheeky, funny roasts — never mean.',{
+    clean:'Zero Clown moves?! Are you sure you\'re in the right circus?',
+    one:'One Clown move. The crowd only laughed a little.',
+    many:'4 Clown moves. HONK HONK! Even I can\'t juggle that many blunders.',
+    brill:'16.Qb8+!! Okay, okay… that was actually genius.',
+    load:'Warming up the honk horn…',
+    empty:'The big top is empty. Bring me a game to roast!',
+    streak:'5 in a row? Who are you and what did you do with the clown?'}],
+  ['C','Ringmaster','A theatrical circus showman.',{
+    clean:'Ladies and gentlemen — a flawless performance! Not one Clown move!',
+    one:'A near-perfect show… with one tumble on move 23!',
+    many:'Four Clown moves under the big top tonight — the crowd is roaring!',
+    brill:'Behold — 16.Qb8+!! The most daring trick of the evening!',
+    load:'Places, everyone — the show is about to begin…',
+    empty:'The stage awaits its first performer. Import a game!',
+    streak:'Five in a row! The audience is on its feet!'}],
+];
+/* move badges: [key, label, colour, classic text] */
+const CATS=[['brilliant','Brilliant','#1aa6a6','!!'],['great','Awesome','#3b8fd4','!'],['best','Best','#5fb35f','★'],
+  ['excellent','Nice','#8ab84a','✓'],['book','Theoretical','#b07a3c','▦'],['inaccuracy','Strange','#e0c04a','?!'],
+  ['mistake','Bad','#e08a3c','?'],['miss','Miss','#e0654a','✗'],['blunder','Clown','#d24a4a','??']];
+const txt=(t,s=11)=>`<text x="12" y="${12+s*0.36}" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="${s}" fill="#fff">${t}</text>`;
+const ICON={ // circus icons on a 24×24 badge
+  brilliant:`<circle cx="6.6" cy="15.2" r="3.3" fill="#fff"/><circle cx="12" cy="7.6" r="3.3" fill="#ffd23f"/><circle cx="17.4" cy="15.2" r="3.3" fill="#ff9cc0"/>
+    <path d="M6.6 11 Q8 7.8 9.6 7.4 M14.4 7.4 Q16 7.8 17.4 11" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="1 1.2" opacity=".8"/>`,
+  great:txt('!',14), best:`<path d="M12 4.2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L12 16.1l-4.6 2.5.9-5.2-3.8-3.7 5.2-.8z" fill="#fff"/>`,
+  excellent:`<path d="M6.5 12.5l3.6 3.6 7.4-7.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  book:`<path d="M5 7.2q3.4-1.6 6.6.4v10q-3.2-1.8-6.6-.4zM19 7.2q-3.4-1.6-6.6.4v10q3.2-1.8 6.6-.4z" fill="#fff"/>`,
+  inaccuracy:txt('?!',10.5),
+  mistake:`<g transform="translate(12 12) scale(1.18) translate(-12 -12)" stroke="#4a2f00" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12.2 14.6c.2-3.4-.6-6.4-2.4-9" fill="none" stroke-width="3.6"/><path d="M12.2 14.6c.2-3.4-.6-6.4-2.4-9" fill="none" stroke="#fff3a0" stroke-width="2"/>
+    <path d="M12 18.5c-.4-4.2-2.6-7-6.4-8.3 3 .1 5.1 1.5 6.2 3.6 1-2.6 3.2-4.4 6.6-4.6-3.8 1.6-5.8 4.6-6.4 9.3z" fill="#fff3a0" stroke-width="1.1"/></g>`,
+  miss:`<path d="M4.6 12.6h14.8a7.4 6 0 0 1-14.8 0z" fill="#c98a4a"/><path d="M4.6 12.6q1.4-5.4 7.4-5.4t7.4 5.4z" fill="#fff4d6"/>
+    <path d="M7 12.6q.6 1.8 1.7 0 .6 1.8 1.7 0 .6 1.8 1.7 0 .6 1.8 1.7 0 .6 1.8 1.7 0 .6 1.8 1.7 0" fill="none" stroke="#fff4d6" stroke-width="1.2"/>
+    <circle cx="12" cy="6.4" r="1.9" fill="#d81f3a"/>`,
+};
+let noseId=0;
+function badge(cat,style){ // style 1 classic, 2 circus, 3 mixed
+  const [k,,col,t]=CATS.find(c=>c[0]===cat);
+  const circus=style===2||(style===3&&['brilliant','mistake','miss','blunder'].includes(k));
+  if(circus&&k==='blunder'){ // the badge IS a clown nose
+    const id='cn'+(++noseId);
+    return `<svg class="bd" viewBox="0 0 24 24"><defs><radialGradient id="${id}" cx=".38" cy=".33" r=".75"><stop offset="0" stop-color="#ff8a95"/><stop offset="1" stop-color="#d0182f"/></radialGradient></defs>
+      <circle cx="12" cy="12" r="11.5" fill="#b8162b"/><circle cx="12" cy="12" r="10.4" fill="url(#${id})"/><ellipse cx="8.6" cy="8.2" rx="3" ry="2.2" fill="#fff" opacity=".75"/></svg>`;
+  }
+  const inner=circus&&ICON[k]?ICON[k]:(k==='best'||k==='excellent'||k==='book'||k==='great')&&style===2?ICON[k]:txt(t,t.length>1?10.5:13);
+  return `<svg class="bd" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11.5" fill="${col}"/>${inner}</svg>`;
+}
+const BADGES=[[1,'Classic symbols','Today\'s badges.'],[2,'Circus icons','Every badge drawn — juggling balls, banana peel, pie, red nose…'],
+  [3,'Mixed','Classic symbols, plus circus icons only for the four funny ones.']];
+const WHERE=[['verdict','Review verdict','A line from the clown at the top of every review (his face matches the result).'],
+  ['live','Live reactions','He pops up on the board for a Brilliant or Clown move — "HONK!" / "WOW!".'],
+  ['states','Loading & empty screens','Thinking clown while analysing; friendly lines when there are no games yet.'],
+  ['puzzles','Puzzle results','Reacts when you solve or miss, and cheers your streaks.']];
+
+const st={name:0,style:1,voice:1,badge:3,where:['verdict','live','states','puzzles'],scene:'one'}; // = my recommendation
+try{ Object.assign(st,JSON.parse(localStorage.getItem('personalityOptions')||'{}')); }catch(e){}
+function draw(){
+  const nm=NAMES[st.name][0], style=STYLES[st.style][0];
+  document.getElementById('gName').innerHTML=NAMES.map((n,i)=>`<div class="card${st.name===i?' sel':''}" data-k="name" data-i="${i}">
+    <div class="t"><span class="num">${i+1}</span>${n[0]}</div><div class="d">${n[1]}</div>
+    <div class="hello">${mascot('happy','B')}<div class="bubble">Hi, I'm ${n[0]}! Show me your games.</div></div></div>`).join('');
+  document.getElementById('gStyle').innerHTML=STYLES.map((s,i)=>`<div class="card${st.style===i?' sel':''}" data-k="style" data-i="${i}">
+    <div class="t"><span class="num">${s[0]}</span>${s[1]}</div><div class="d">${s[2]}</div>
+    <div class="moods">${MOODS.map(([m,l,w])=>`<div class="mood">${mascot(m,s[0])}${l}<span>${w}</span></div>`).join('')}</div></div>`).join('');
+  document.getElementById('scen').innerHTML=SCENES.map(([k,l])=>`<button class="${st.scene===k?'on':''}" data-scene="${k}">${l}</button>`).join('');
+  const sc=SCENES.find(s=>s[0]===st.scene);
+  document.getElementById('gVoice').innerHTML=VOICES.map((v,i)=>`<div class="card${st.voice===i?' sel':''}" data-k="voice" data-i="${i}">
+    <div class="t"><span class="num">${v[0]}</span>${v[1]}</div><div class="d">${v[2]}</div>
+    <div class="verdict">${mascot(sc[2],style)}<div class="bubble"><div class="vname">${nm.toUpperCase()}</div>${v[3][sc[0]]}</div></div></div>`).join('');
+  const rows=s=>`<div class="rows">${['brilliant','best','book','inaccuracy','mistake','miss','blunder'].map(c=>{const x=CATS.find(z=>z[0]===c);
+    return `<div class="row">${badge(c,s)}${x[1]}<span class="n">${{brilliant:1,best:14,book:6,inaccuracy:2,mistake:1,miss:1,blunder:2}[c]}</span></div>`}).join('')}</div>`;
+  const sq=(c,s,light,piece)=>`<div class="sq" style="background:${light?'#c9c3d8':'#6d6199'}"><img src="../pieces/cburnett/${piece}.svg" alt="">${badge(c,s)}</div>`;
+  document.getElementById('gBadge').innerHTML=BADGES.map(([n,t,d])=>`<div class="card${st.badge===n?' sel':''}" data-k="badge" data-i="${n}">
+    <div class="t"><span class="num">${n}</span>${t}</div><div class="d">${d}</div>${rows(n)}
+    <div class="sqdemo">${sq('brilliant',n,true,'wQ')}${sq('miss',n,false,'bN')}${sq('blunder',n,true,'wK')}</div></div>`).join('');
+  document.getElementById('gWhere').innerHTML=WHERE.map(([k,t,d])=>`<div class="chip${st.where.includes(k)?' sel':''}" data-where="${k}"><b>${t}</b><span>${d}</span></div>`).join('');
+  document.getElementById('pkName').textContent='Name '+(st.name+1)+' · '+nm;
+  document.getElementById('pkStyle').textContent='Faces '+style;
+  document.getElementById('pkVoice').textContent='Voice '+VOICES[st.voice][0]+' · '+VOICES[st.voice][1];
+  document.getElementById('pkBadge').textContent='Badges '+st.badge;
+  document.getElementById('pkWhere').textContent=st.where.length===4?'Everywhere':(st.where.length?st.where.join(', '):'Nowhere');
+  try{ localStorage.setItem('personalityOptions',JSON.stringify(st)); }catch(e){}
+}
+document.addEventListener('click',e=>{
+  const sb=e.target.closest('[data-scene]'); if(sb){ st.scene=sb.dataset.scene; draw(); return; }
+  const w=e.target.closest('[data-where]'); if(w){ const k=w.dataset.where; st.where=st.where.includes(k)?st.where.filter(x=>x!==k):[...st.where,k]; draw(); return; }
+  const c=e.target.closest('.card'); if(!c)return;
+  st[c.dataset.k]=+c.dataset.i; draw();
+});
+draw();
+</script>
+</body>
+</html>
