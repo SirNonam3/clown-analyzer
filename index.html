@@ -943,11 +943,13 @@ const PIECE_SETS=[ // pieces/<folder> — every set is free for commercial use (
   ['cburnett','Classic'],['merida','Merida'],['mpchess','MPChess'],['chessnut','Chessnut'],
   ['spatial','Spatial'],['papercut','Papercut'],['fantasy','Fantasy'],['celtic','Celtic'],
   ['rhosgfx','Rhos'],['firi','Firi'],['kiwen-suwi','Kiwen-suwi'],['totoy','Totoy']];
-const BOARD_THEMES=[ // id, name, light, dark, last-move tint (extra decoration: #board.bt-<id> in CSS)
-  ['lavender','Lavender','#c9c3d8','#6d6199','#d9b25c4a'], ['bigtop','Big Top','#f2e3cc','#b9474f','#f5c84e77'],
-  ['harlequin','Harlequin','#efe3d3','#7c2f45','#f5c84e66'], ['rose','Rose','#ead7da','#a65a6c','#f5c84e66'],
-  ['wood','Wood','#f0d9b5','#b58863','#cdd26a99'], ['green','Green','#eeeed2','#769656','#f6f66988'],
-  ['ice','Ice blue','#dee3e6','#8ca2ad','#9bc70066'], ['neon','Neon','#343a6e','#21254a','#ff3b7f44']];
+const BOARD_THEMES=[ // id, name, light, dark, last-move tint, engine-arrow colour (extra decoration: #board.bt-<id> in CSS)
+  ['lavender','Lavender','#c9c3d8','#6d6199','#d9b25c4a','#8b7cf8'], ['bigtop','Big Top','#f2e3cc','#b9474f','#f5c84e77','#0e9f6e'],
+  ['harlequin','Harlequin','#efe3d3','#7c2f45','#f5c84e66','#0e9f6e'], ['rose','Rose','#ead7da','#a65a6c','#f5c84e66','#0e7490'],
+  ['wood','Wood','#f0d9b5','#b58863','#cdd26a99','#15781b'], ['green','Green','#eeeed2','#769656','#f6f66988','#ea580c'],
+  ['ice','Ice blue','#dee3e6','#8ca2ad','#9bc70066','#ea580c'], ['neon','Neon','#343a6e','#21254a','#ff3b7f44','#ff3b7f']];
+// arrows contrast with both square colours (complementary hue), so engine hints stay readable on every board
+function arrowColor(){ return (BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0])[5]; }
 const APP_THEMES=[['neon','Neon Night','linear-gradient(90deg,#090a16,#ff3b7f,#8b5cf6)'],
   ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)']];
 const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon'};
@@ -1746,11 +1748,12 @@ function drawArrows(list){
   if(!clean.length){clearArrow();return;}
   lastArrows=clean;
   let defs='<defs>', lines=[];
+  const col=arrowColor(); // follows the board theme
   clean.forEach((a,k)=>{
     const p1=sqToXY(a.uci.slice(0,2)), p2=sqToXY(a.uci.slice(2,4));
     defs+=`<marker id="ah${k}" markerWidth="3" markerHeight="3" refX="1.5" refY="1.5" orient="auto">
-      <path d="M0,0 L3,1.5 L0,3 Z" fill="#8b7cf8"/></marker>`;
-    lines.push(`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#8b7cf8" stroke-width="${a.w}"
+      <path d="M0,0 L3,1.5 L0,3 Z" fill="${col}"/></marker>`;
+    lines.push(`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${col}" stroke-width="${a.w}"
       opacity="${a.o}" marker-end="url(#ah${k})" stroke-linecap="round"/>`);
   });
   svg.innerHTML=defs+'</defs>'+lines.reverse().join(''); // best arrow drawn last = on top
