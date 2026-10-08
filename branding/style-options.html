@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clown Analyzer — style options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Bungee&family=Righteous&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b0d16;color:#eceef8;font-family:Inter,'Segoe UI',system-ui,sans-serif}
+  h1{font-size:20px;margin:18px 20px 2px} h2{font-size:17px;margin:26px 20px 4px}
+  .sub{color:#9299b3;font-size:13px;margin:0 20px 12px}
+  /* the live combination */
+  .combo{position:sticky;top:0;z-index:10;background:#0b0d16f2;backdrop-filter:blur(8px);border-bottom:1px solid #2b3049;padding:10px 20px}
+  .combo-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+  .combo-bar b{color:#fff} .pick{background:#1e2235;border:1px solid #2b3049;border-radius:999px;padding:3px 10px}
+  .toggle{margin-left:auto;background:#1e2235;color:#eceef8;border:1px solid #2b3049;border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit}
+  .preview{display:flex;gap:14px;align-items:flex-start;margin-top:10px;flex-wrap:wrap}
+  .combo.collapsed .preview{display:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:0 20px}
+  .card{background:#151827;border:2px solid #2b3049;border-radius:14px;padding:10px;cursor:pointer;transition:border-color .15s,transform .12s}
+  .card:hover{transform:translateY(-2px)} .card.sel{border-color:#ff3b5c;box-shadow:0 0 0 3px #ff3b5c33}
+  .t{font-weight:800;font-size:14px;margin-bottom:2px} .d{color:#9299b3;font-size:12px;margin-bottom:8px;min-height:16px}
+  .lic{font-size:10px;color:#9299b3;margin-top:6px}
+  .num{display:inline-block;min-width:22px;height:22px;border-radius:7px;background:#ff3b5c;color:#fff;text-align:center;font-size:12px;line-height:22px;margin-right:6px;font-weight:800}
+  /* board */
+  .bwrap{display:flex;gap:6px}
+  .board{display:grid;grid-template-columns:repeat(8,1fr);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%;box-shadow:0 8px 24px #0008}
+  .sq{position:relative;display:flex;align-items:center;justify-content:center}
+  .sq img{width:92%;height:92%;pointer-events:none;position:relative;z-index:2}
+  .sq .co{position:absolute;font-size:9px;font-weight:800;opacity:.7;z-index:1}
+  .sq .co.f{bottom:1px;right:3px} .sq .co.r{top:1px;left:3px}
+  .sq.lm::after{content:"";position:absolute;inset:0;z-index:1}
+  .badge{position:absolute;top:-6%;right:-6%;width:44%;height:44%;border-radius:50%;z-index:4;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:800;font-size:max(9px,calc(var(--cell)*.22));border:2px solid #0d0f1a;box-shadow:0 2px 6px #0009}
+  .evalbar{width:16px;border-radius:6px;overflow:hidden;background:#0a0c14;position:relative;flex:0 0 auto}
+  .evalbar i{position:absolute;left:0;right:0;bottom:0;height:58%;background:linear-gradient(180deg,#e9e6f2,#c9c3d8)}
+  /* mock app panel (palette) */
+  .mock{width:100%;border-radius:14px;overflow:hidden;background:var(--bg);color:var(--text);border:1px solid var(--border);font-family:Inter,sans-serif}
+  .m-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--head)}
+  .m-head img{width:26px;height:26px;border-radius:7px}
+  .m-title{font-family:var(--tfont);font-weight:800;font-size:var(--tsize);letter-spacing:var(--tls);background:var(--tgrad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .m-pill{margin-left:auto;font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 7px;background:var(--panel2)}
+  .m-body{padding:10px}
+  .m-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:9px;box-shadow:var(--pshadow)}
+  .m-tabs{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:10px;margin-bottom:8px}
+  .m-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;font-weight:600;color:var(--muted);padding:5px 2px;border-radius:8px}
+  .m-tab.on{background:var(--btn);color:#fff;box-shadow:var(--glow)}
+  .ico{width:15px;height:15px;display:inline-block;background:currentColor;-webkit-mask:var(--u) center/contain no-repeat;mask:var(--u) center/contain no-repeat}
+  .emo{font-size:13px;line-height:15px;height:15px}
+  .m-acc{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:7px;text-align:center}
+  .m-acc .l{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+  .m-acc .v{display:flex;justify-content:space-around;font-size:20px;font-weight:800;margin-top:2px}
+  .m-acc .v span:first-child{color:var(--good)} .m-acc .v span:last-child{color:var(--warn)}
+  .m-rows{margin-top:7px;font-size:11px}
+  .m-row{display:flex;align-items:center;gap:6px;padding:2px 0}
+  .m-row .bd{width:15px;height:15px;border-radius:50%;font-size:8px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center}
+  .m-row .n{margin-left:auto;font-weight:700}
+  .m-btns{display:flex;gap:6px;margin-top:8px}
+  .m-btn{flex:1;text-align:center;font-size:11px;font-weight:700;padding:7px;border-radius:9px;background:var(--btn);color:#fff;box-shadow:var(--glow)}
+  .m-btn.sec{background:var(--panel2);border:1px solid var(--border);color:var(--text);box-shadow:none}
+  .m-stats{display:flex;gap:5px;margin-top:8px}
+  .m-stat{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:5px}
+  .m-stat b{display:block;font-size:15px} .m-stat span{font-size:8.5px;color:var(--muted)}
+  .m-deco{height:5px;background:var(--deco)}
+  /* icons rows */
+  .iconrow{display:flex;gap:4px;background:#1e2235;padding:4px;border-radius:12px;margin-top:4px}
+  .iconrow .m-tab{font-size:11px;padding:8px 2px;color:#9299b3}
+  .iconrow .m-tab.on{background:linear-gradient(135deg,#ff4d63,#d81f3a);color:#fff;box-shadow:none}
+  .iconrow .ico{width:20px;height:20px} .iconrow .emo{font-size:17px;line-height:20px;height:20px}
+  @media(max-width:700px){ .preview>div{width:100%!important} }
+</style>
+</head>
+<body>
+<div class="combo" id="combo">
+  <div class="combo-bar">
+    <b>Your combination:</b>
+    <span class="pick" id="pkPieces"></span><span class="pick" id="pkBoard"></span>
+    <span class="pick" id="pkPal"></span><span class="pick" id="pkIcons"></span>
+    <button class="toggle" id="tog">Hide preview</button>
+  </div>
+  <div class="preview">
+    <div style="width:min(430px,100%)"><div class="bwrap"><div class="evalbar" id="cEval"><i></i></div><div style="flex:1" id="cBoard"></div></div></div>
+    <div style="width:min(330px,100%)" id="cMock"></div>
+  </div>
+</div>
+
+<h1>🤡 Clown Analyzer — style options (step 1)</h1>
+<p class="sub">Click any option — the preview at the top shows how they look together. Tell me the numbers you like, e.g. "pieces 3, board 2, colours B, icons 2". You can pick more than one piece set / board if you want a picker in the app.</p>
+
+<h2>1 · Piece sets</h2>
+<p class="sub">Real drawn pieces instead of today's text symbols. All are free for commercial use (licence shown).</p>
+<div class="grid" id="gPieces"></div>
+
+<h2>2 · Board colours</h2>
+<p class="sub">Shown with the piece set you picked above, plus a move badge and last-move highlight.</p>
+<div class="grid" id="gBoards"></div>
+
+<h2>3 · App colours</h2>
+<p class="sub">Matching the interface to the red Harlequin logo — or keeping today's violet.</p>
+<div class="grid" id="gPals"></div>
+
+<h2>4 · Icons</h2>
+<p class="sub">The tab bar today uses emoji, which look different on every phone. Icon sets are drawn the same everywhere.</p>
+<div class="grid" id="gIcons" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))"></div>
+<div style="height:40px"></div>
+
+<script>
+const CDN='https://cdn.jsdelivr.net/gh/lichess-org/lila@master/public/piece/';
+const PIECES=[ // [folder, nickname, description, licence (author)]
+  ['cburnett','Classic','The Lichess / Wikipedia standard — crisp, familiar, very readable.','GPL-2.0+ · Colin M.L. Burnett'],
+  ['merida','Merida','Traditional tournament-book look with heavier outlines.','GPL-2.0+ · Armando H. Marroquin'],
+  ['chessnut','Chessnut','Classic shapes with soft, modern shading.','Apache-2.0 · Alexis Luengas'],
+  ['fantasy','Fantasy','Detailed classic pieces with a storybook touch.','MIT · Maurizio Monge'],
+  ['celtic','Celtic','Classic shapes with decorative details.','MIT · Maurizio Monge'],
+  ['spatial','Spatial','Shaded pieces with a soft 3D feel.','MIT · Maurizio Monge'],
+  ['rhosgfx','Rhos','Warm cream vs copper-orange — stylish and different.','CC0 · RhosGFX'],
+  ['kiwen-suwi','Kiwen-suwi','Flat, bold pictograms — very readable on phones.','CC BY 4.0 · neverRare'],
+  ['firi','Firi','Silver vs gold, ornate — the fancy one.','CC BY 4.0 · James Faure'],
+  ['totoy','Totoy','Simple, toy-like outlines.','CC BY 4.0 · Kosal Sen'],
+  ['papercut','Papercut','Light, paper-like shading — minimal and elegant.','CC BY 4.0 · Nikolay Anzarov'],
+  ['mpchess','MPChess','Classic print style, like a chess book.','GPL-3.0+ · Maxime Chupin'],
+];
+const DIAMOND="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 .8 9.2 5 5 9.2.8 5z' fill='%23fff' opacity='.11'/%3E%3C/svg%3E\")";
+const BOARDS=[ // [name, description, light, dark, extra css for dark squares, last-move tint, coordinate colours]
+  ['Lavender','Today\'s board — calm violet.','#c9c3d8','#6d6199','','#d9b25c55'],
+  ['Big Top','Circus cream and a soft tent red.','#f2e3cc','#b9474f','','#f5c84e77'],
+  ['Harlequin','Wine red with the logo\'s diamond pattern.','#efe3d3','#7c2f45',DIAMOND,'#f5c84e66'],
+  ['Rose','Soft pink-grey, matches the red glow.','#ead7da','#a65a6c','','#f5c84e66'],
+  ['Classic wood','The traditional brown board.','#f0d9b5','#b58863','','#cdd26a99'],
+  ['Tournament green','The club / chess.com look.','#eeeed2','#769656','','#f6f66988'],
+  ['Ice blue','Cool and quiet.','#dee3e6','#8ca2ad','','#9bc70066'],
+  ['Neon','Dark board with glowing grid lines.','#343a6e','#21254a','','#ff3b7f44','neon'],
+];
+const PALS=[ // [letter, name, description, css vars]
+  ['A','Midnight Violet (today)','The current look — violet and teal.',
+    {'--bg':'#0d0f1a','--head':'#0d0f1acc','--panel':'#151827','--panel2':'#1e2235','--border':'#2b3049','--text':'#eceef8','--muted':'#9299b3',
+     '--btn':'linear-gradient(135deg,#8b7cf8,#655ae8)','--glow':'0 2px 10px #655ae055','--tgrad':'linear-gradient(90deg,#a99cff,#4fd1c5)',
+     '--good':'#4ade80','--warn':'#f5b74e','--tfont':'Inter','--tsize':'15px','--tls':'.3px','--pshadow':'0 8px 24px #0007','--deco':'transparent'}],
+  ['B','Big Top','Circus red, gold and cream on deep plum — loud and fun.',
+    {'--bg':'#140c12','--head':'#1b0f17','--panel':'#1f141c','--panel2':'#2a1b25','--border':'#432a37','--text':'#fbf1e6','--muted':'#c4aaa0',
+     '--btn':'linear-gradient(135deg,#ff4d63,#d81f3a)','--glow':'0 2px 12px #ff3b5c55','--tgrad':'linear-gradient(90deg,#ff6a7d,#f5c84e)',
+     '--good':'#7bd88f','--warn':'#f5c84e','--tfont':'Bungee','--tsize':'14px','--tls':'.5px','--pshadow':'0 8px 24px #0008',
+     '--deco':'repeating-linear-gradient(90deg,#d81f3a 0 14px,#fbf1e6 14px 28px)'}],
+  ['C','Neon Night','Hot pink and violet glow, like the logo\'s neon.',
+    {'--bg':'#090a16','--head':'#0d0e22','--panel':'#12142b','--panel2':'#1a1d3d','--border':'#2e3163','--text':'#eef0ff','--muted':'#9aa0c8',
+     '--btn':'linear-gradient(135deg,#ff3b7f,#8b5cf6)','--glow':'0 0 14px #ff3b7f77','--tgrad':'linear-gradient(90deg,#ff5c93,#a78bfa)',
+     '--good':'#5eead4','--warn':'#ffb86b','--tfont':'Righteous','--tsize':'16px','--tls':'.6px','--pshadow':'0 0 0 1px #ff3b7f22,0 10px 30px #0009',
+     '--deco':'linear-gradient(90deg,#ff3b7f,#8b5cf6)'}],
+  ['D','Classy Clown','Calm charcoal; red and gold only for accents.',
+    {'--bg':'#111216','--head':'#111216','--panel':'#191b21','--panel2':'#22252d','--border':'#30343e','--text':'#f2f2f4','--muted':'#9a9fab',
+     '--btn':'linear-gradient(135deg,#e5484d,#c9353b)','--glow':'none','--tgrad':'linear-gradient(90deg,#f2f2f4,#f2f2f4)',
+     '--good':'#6fcf97','--warn':'#e7b54a','--tfont':'Inter','--tsize':'15px','--tls':'0','--pshadow':'0 6px 18px #0006',
+     '--deco':'linear-gradient(90deg,#e5484d 0 33%,#e7b54a 33% 66%,#f2f2f4 66%)'}],
+];
+const TABS=['Play','Import','Review','Puzzles','History'];
+const ICONS=[ // [number, name, description, renderer per tab]
+  ['1','Emoji (today)','Different on every device.',['♟','⇩','📊','🧩','🕘'].map(e=>`<span class="emo">${e}</span>`)],
+  ['2','Tabler — outline','Clean line icons, with a real chess knight. MIT.',
+    ['chess-knight','file-import','chart-histogram','puzzle','history'].map(n=>`https://unpkg.com/@tabler/icons@3/icons/outline/${n}.svg`)],
+  ['3','Phosphor — duotone','Softer, two-tone icons. MIT.',
+    ['crown-duotone','download-simple-duotone','chart-line-up-duotone','puzzle-piece-duotone','clock-counter-clockwise-duotone']
+      .map(n=>`https://unpkg.com/@phosphor-icons/core@2/assets/duotone/${n}.svg`)],
+  ['4','Lucide','Thin, minimal line icons. ISC.',
+    ['swords','download','chart-line','puzzle','history'].map(n=>`https://unpkg.com/lucide-static@latest/icons/${n}.svg`)],
+];
+const icoHtml=x=>x.startsWith('<')?x:`<span class="ico" style="--u:url('${x}')"></span>`;
+
+// a middlegame with every piece type; last move 9.h3 marked "Best"
+const FEN='r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1';
+const LAST=['h2','h3'], BADGE={sq:'h3',icon:'★',color:'#5fb35f'};
+function boardHtml(set,b){
+  const [, , light, dark, extra, lm, mode]=BOARDS[b];
+  const rows=FEN.split('/'); let html='';
+  rows.forEach((row,r)=>{ let f=0;
+    for(const ch of row){
+      if(/\d/.test(ch)){ for(let k=0;k<+ch;k++){ html+=sq(r,f,null); f++; } }
+      else { html+=sq(r,f,ch); f++; }
+    }});
+  function sq(r,f,p){
+    const name='abcdefgh'[f]+(8-r), isDark=(r+f)%2===1;
+    let st=`background:${isDark?dark:light};`;
+    if(isDark&&extra) st+=`background-image:${extra};background-size:100% 100%;`;
+    if(mode==='neon') st+=`box-shadow:inset 0 0 0 1px #ff3b7f2e;`;
+    const lmHere=LAST.includes(name);
+    const coCol=mode==='neon'?'#ff9cc0':(isDark?light:dark);
+    let inner='';
+    if(r===7) inner+=`<span class="co f" style="color:${coCol}">${'abcdefgh'[f]}</span>`;
+    if(f===0) inner+=`<span class="co r" style="color:${coCol}">${8-r}</span>`;
+    if(p){ const c=p===p.toUpperCase()?'w':'b'; inner+=`<img src="${CDN}${set}/${c}${p.toUpperCase()}.svg" alt="">`; }
+    if(name===BADGE.sq) inner+=`<span class="badge" style="background:${BADGE.color}">${BADGE.icon}</span>`;
+    return `<div class="sq${lmHere?' lm':''}" style="${st}${lmHere?`--lm:${lm}`:''}">${inner}</div>`;
+  }
+  return `<div class="board">${html}</div>`;
+}
+function mockHtml(p,ic){
+  const vars=Object.entries(PALS[p][3]).map(([k,v])=>`${k}:${v}`).join(';');
+  const tabs=TABS.map((t,i)=>`<div class="m-tab${i===2?' on':''}">${icoHtml(ICONS[ic][3][i])}<span>${t}</span></div>`).join('');
+  const row=(c,i,l,n)=>`<div class="m-row"><span class="bd" style="background:${c}">${i}</span>${l}<span class="n">${n}</span></div>`;
+  return `<div class="mock" style="${vars}">
+    <div class="m-deco"></div>
+    <div class="m-head"><img src="../logo.svg" alt=""><span class="m-title">Clown Analyzer</span><span class="m-pill">Engine ready</span></div>
+    <div class="m-body"><div class="m-panel">
+      <div class="m-tabs">${tabs}</div>
+      <div class="m-acc"><div class="l">ACCURACY</div><div class="v"><span>86.4</span><span>72.1</span></div></div>
+      <div class="m-rows">${row('#1aa6a6','!!','Brilliant',1)}${row('#5fb35f','★','Best',14)}${row('#d24a4a','??','Clown',2)}</div>
+      <div class="m-btns"><div class="m-btn">📤 Share report</div><div class="m-btn sec">☆ Save</div></div>
+      <div class="m-stats"><div class="m-stat"><b>1532</b><span>Puzzle rating</span></div><div class="m-stat"><b>4</b><span>🔥 Streak</span></div><div class="m-stat"><b>18/23</b><span>Solved</span></div></div>
+    </div></div></div>`;
+}
+
+const state={piece:0,board:0,pal:0,icon:0};
+try{ Object.assign(state,JSON.parse(localStorage.getItem('styleOptions')||'{}')); }catch(e){}
+function card(kind,i,title,desc,body,lic){
+  return `<div class="card${state[kind]===i?' sel':''}" data-k="${kind}" data-i="${i}">
+    <div class="t">${title}</div><div class="d">${desc}</div>${body}${lic?`<div class="lic">${lic}</div>`:''}</div>`;
+}
+function draw(){
+  const P=PIECES[state.piece][0];
+  document.getElementById('gPieces').innerHTML=PIECES.map((p,i)=>card('piece',i,`<span class="num">${i+1}</span>${p[1]}`,p[2],boardHtml(p[0],state.board),p[3])).join('');
+  document.getElementById('gBoards').innerHTML=BOARDS.map((b,i)=>card('board',i,`<span class="num">${i+1}</span>${b[0]}`,b[1],boardHtml(P,i))).join('');
+  document.getElementById('gPals').innerHTML=PALS.map((p,i)=>card('pal',i,`<span class="num">${p[0]}</span>${p[1]}`,p[2],mockHtml(i,state.icon))).join('');
+  document.getElementById('gIcons').innerHTML=ICONS.map((ic,i)=>card('icon',i,`<span class="num">${ic[0]}</span>${ic[1]}`,ic[2],
+    `<div class="iconrow">${TABS.map((t,k)=>`<div class="m-tab${k===2?' on':''}">${icoHtml(ic[3][k])}<span>${t}</span></div>`).join('')}</div>`)).join('');
+  document.getElementById('cBoard').innerHTML=boardHtml(P,state.board);
+  document.getElementById('cMock').innerHTML=mockHtml(state.pal,state.icon);
+  document.getElementById('pkPieces').textContent=`Pieces ${state.piece+1} · ${PIECES[state.piece][1]}`;
+  document.getElementById('pkBoard').textContent=`Board ${state.board+1} · ${BOARDS[state.board][0]}`;
+  document.getElementById('pkPal').textContent=`Colours ${PALS[state.pal][0]} · ${PALS[state.pal][1]}`;
+  document.getElementById('pkIcons').textContent=`Icons ${ICONS[state.icon][0]} · ${ICONS[state.icon][1]}`;
+  // board size dependent badge font + last-move overlay
+  document.querySelectorAll('.board').forEach(b=>b.style.setProperty('--cell',(b.getBoundingClientRect().width/8||30)+'px'));
+  document.getElementById('cEval').style.height=document.querySelector('#cBoard .board').getBoundingClientRect().height+'px';
+  try{ localStorage.setItem('styleOptions',JSON.stringify(state)); }catch(e){}
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('.card'); if(!c)return;
+  state[c.dataset.k]=+c.dataset.i; draw();
+});
+document.getElementById('tog').onclick=e=>{
+  const col=document.getElementById('combo').classList.toggle('collapsed');
+  e.target.textContent=col?'Show preview':'Hide preview';
+};
+const st=document.createElement('style'); st.textContent='.sq.lm::after{background:var(--lm)}'; document.head.appendChild(st);
+draw(); addEventListener('resize',draw);
+</script>
+</body>
+</html>
