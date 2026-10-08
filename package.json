@@ -8,6 +8,7 @@
     "sync": "node scripts/build-www.mjs && npx cap sync",
     "assets": "node scripts/make-app-assets.mjs && npx @capacitor/assets generate --android --ios --iconBackgroundColor #0d0f1a --iconBackgroundColorDark #0d0f1a --splashBackgroundColor #0d0f1a --splashBackgroundColorDark #0d0f1a",
     "puzzles": "node scripts/build-puzzles.mjs",
+    "mascot": "node scripts/make-mascot.mjs",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios"
   },

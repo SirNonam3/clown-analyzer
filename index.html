@@ -223,7 +223,15 @@ button.btn.sec:hover{border-color:var(--accent);transform:none}
 .rs-col,.km-box{border:1px solid var(--border);border-radius:12px}
 .graph-box{border-radius:12px}
 .hl-chip{border:1px solid var(--border);border-radius:9px}
-.movebadge{border-color:var(--bg)}
+/* move badges: glossy circle in the category colour (--c), white ring on the board */
+.rs-badge,.movebadge{--c:#888;background-color:var(--c);
+  background-image:radial-gradient(circle at 34% 26%,color-mix(in srgb,var(--c) 40%,#fff) 0%,var(--c) 48%,color-mix(in srgb,var(--c) 72%,#000) 100%);
+  text-shadow:0 1px 1px rgba(0,0,0,.35);letter-spacing:-.07em}
+.rs-badge{width:17px;height:17px;min-width:17px;padding:0;font-size:9px;vertical-align:-3px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 1px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.45)}
+.movebadge{border-color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.55),inset 0 -2px 2px rgba(0,0,0,.2)}
+.rs-badge svg,.movebadge svg{width:74%;height:74%;filter:drop-shadow(0 1px .5px rgba(0,0,0,.3));overflow:visible}
+.rs-badge b,.movebadge b{font-weight:800;line-height:1;margin-left:-.06em}
 .moves .mv.cur{background:var(--grad)}
 /* inputs */
 textarea,input[type=text],select{border-radius:10px;background:var(--field)}
@@ -327,6 +335,54 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .pz-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--muted)}
 .pz-more{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
 .movebadge.pz-pop{animation:pzPop .3s .12s cubic-bezier(.2,.9,.3,1.4) both} /* waits for the piece to land */
+/* ---- Pawnzo ---- */
+.pawnzo-face{width:46px;height:46px;flex:0 0 auto;display:block;user-select:none}
+.pv-bubble{position:relative;background:#fff;color:#1b1638;border-radius:14px;padding:7px 11px;font-size:13px;font-weight:600;line-height:1.35}
+.pv-bubble::before{content:"";position:absolute;left:-6px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:#fff}
+.pv-name{font-size:9.5px;font-weight:800;color:var(--accent);letter-spacing:.7px;margin-bottom:1px}
+.pawnzo-verdict{display:flex;align-items:center;gap:9px;margin:0 0 10px;cursor:pointer;
+  background:var(--card-grad);border:1px solid var(--border);border-radius:14px;padding:7px 9px}
+.pawnzo-verdict .pawnzo-face{width:50px;height:50px}
+.pawnzo-verdict:hover .pawnzo-face{transform:rotate(-6deg)}
+.pawnzo-face{transition:transform .15s}
+.pawnzo-face.wiggle{animation:pzWiggle .45s ease}
+@keyframes pzWiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}60%{transform:rotate(9deg)}}
+.pawnzo-note{display:flex;align-items:center;gap:8px;margin:8px 0}
+.pawnzo-note .pv-bubble{font-size:12.5px}
+.pz-say{margin:8px 0 2px}
+.pz-say .pawnzo-face{width:40px;height:40px}
+#scanPawnzo .pawnzo-face{animation:pzBob 1.4s ease-in-out infinite}
+@keyframes pzBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+/* pop-up on the board corner */
+.pawnzo-pop{position:absolute;left:8px;bottom:8px;z-index:30;display:flex;align-items:center;gap:4px;pointer-events:none;
+  animation:pzIn .35s cubic-bezier(.2,.9,.3,1.35) both}
+.pawnzo-pop .pawnzo-face{width:64px;height:64px;filter:drop-shadow(0 4px 10px #000a)}
+.pp-bubble{background:#fff;color:#1b1638;font:800 15px 'Righteous','Inter',sans-serif;letter-spacing:.4px;padding:7px 12px;border-radius:14px;
+  box-shadow:0 4px 14px #0008;position:relative;white-space:nowrap}
+.pp-bubble::before{content:"";position:absolute;left:-6px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:#fff}
+.pawnzo-pop.out{animation:pzOut .3s ease forwards}
+@keyframes pzIn{0%{transform:translateY(16px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+@keyframes pzOut{to{transform:translateY(10px) scale(.85);opacity:0}}
+/* brilliant celebration */
+.sq.brill-glow::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  box-shadow:inset 0 0 0 3px #5eead4,inset 0 0 26px #1aa6a6cc;animation:brillGlow 1.3s ease forwards}
+@keyframes brillGlow{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}
+.movebadge.brill-pop{animation:brillPop .55s cubic-bezier(.2,.9,.3,1.5)}
+@keyframes brillPop{0%{transform:scale(.4)}55%{transform:scale(1.5) rotate(-12deg)}100%{transform:scale(1)}}
+.sparkles{position:fixed;width:0;height:0;z-index:950;pointer-events:none}
+.sparkles i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;opacity:0;
+  animation:spark .95s cubic-bezier(.15,.8,.3,1) forwards}
+.sparkles i.st{width:13px;height:13px;left:-6.5px;top:-6.5px;border-radius:0;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+@keyframes spark{0%{transform:translate(0,0) scale(.3);opacity:1}65%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1) rotate(150deg);opacity:0}}
+/* settings switches */
+.set-toggles{display:flex;flex-direction:column;gap:8px}
+.set-toggle{display:flex;align-items:center;gap:11px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;
+  padding:9px 11px;cursor:pointer;color:var(--text);text-align:left;font:inherit}
+.set-toggle .sw{width:36px;height:21px;border-radius:999px;background:var(--border);position:relative;flex:0 0 auto;transition:background .15s}
+.set-toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .15s}
+.set-toggle.on .sw{background:var(--grad)} .set-toggle.on .sw::after{transform:translateX(15px)}
+.st-txt b{display:block;font-size:13px} .st-txt small{color:var(--muted);font-size:11.5px}
 @keyframes pzPop{0%{transform:scale(0)}100%{transform:scale(1)}}
 /* premium */
 .donate.premium{border:none;cursor:pointer;font-family:inherit}
@@ -479,6 +535,7 @@ header h1{margin-right:auto}
       </label>
       <button class="btn" id="runReview">Scan game</button>
       <div id="progress"><div id="progressbar"></div></div>
+      <div id="scanPawnzo" hidden></div>
       <div class="moves" id="reviewList" style="max-height:none;overflow:visible;margin-top:10px"></div>
     </div>
 
@@ -535,6 +592,7 @@ header h1{margin-right:auto}
     <div class="set-title">APP COLOURS</div><div class="set-grid set-grid-2" id="setTheme"></div>
     <div class="set-title">BOARD</div><div class="set-grid" id="setBoard"></div>
     <div class="set-title">PIECES</div><div class="set-grid" id="setPieces"></div>
+    <div class="set-title">PAWNZO, YOUR CLOWN</div><div class="set-toggles" id="setPawnzo"></div>
   </div>
 </div>
 
@@ -952,7 +1010,7 @@ const BOARD_THEMES=[ // id, name, light, dark, last-move tint, engine-arrow colo
 function arrowColor(){ return (BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0])[5]; }
 const APP_THEMES=[['neon','Neon Night','linear-gradient(90deg,#090a16,#ff3b7f,#8b5cf6)'],
   ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)']];
-const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon'};
+const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon',pops:true,funSounds:true}; // pops/funSounds: Pawnzo reactions
 try{ Object.assign(uiPrefs,JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}')); }catch(e){}
 function pieceSrc(color,type,set){ return `pieces/${set||uiPrefs.pieces}/${color}${type.toUpperCase()}.svg`; }
 function preloadPieces(set){ // resolves when all 12 images are ready (or after 2 s)
@@ -987,8 +1045,8 @@ function boardBadge(cell,meta){
   const bs=Math.max(18,Math.round(cs*0.44));
   const b=document.createElement('span');
   b.className='movebadge';
-  b.style.background=meta.color;
-  b.textContent=meta.icon; b.title=meta.label;
+  b.style.setProperty('--c',meta.color);
+  b.innerHTML=badgeInner(meta.icon); b.title=meta.label;
   b.style.width=b.style.height=b.style.minWidth=bs+'px';
   b.style.fontSize=Math.round(bs*0.5)+'px';
   b.style.borderWidth=Math.max(2,Math.round(bs*0.08))+'px';
@@ -1275,7 +1333,9 @@ function showJudge(san,sq,cat){
   render();
   const mcat=CATS[cat];
   const jt=document.getElementById('judgeText');
-  if(jt)jt.innerHTML=`Your move <b>${san}</b> <span class="rs-badge" style="background:${mcat.color}">${mcat.icon}</span> ${mcat.label}`;
+  if(jt)jt.innerHTML=`Your move <b>${san}</b> ${rsBadge(mcat)} ${mcat.label}`;
+  if(cat==='brilliant'){ celebrateBrilliant(sq); pawnzoPop('wow',pawnzoPick('popBrill')); }
+  else if(cat==='blunder'){ pawnzoPop('laugh',pawnzoPick('popClown')); funSound('honk'); }
 }
 function clearJudge(){
   liveBadge=null; pendingJudge=null;
@@ -1616,9 +1676,21 @@ function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
     <span class="small">rating ${p.rating}</span>`:'';
   const src=pm.id?` · <a href="https://lichess.org/training/${pm.id}" target="_blank" rel="noopener">#${pm.id} on Lichess ↗</a>`:'';
   const info=(pm.rating?`Puzzle rated ${pm.rating}`:esc(pm.title))+src;
+  // Pawnzo's take: streak milestones, hard solves, misses, peeks
+  const before=p.rating-(pm.rateDone?pm.delta:0), MILESTONES=[3,5,10,15,20,25,30,40,50,75,100];
+  let pool,mood;
+  if(kind==='win'){
+    if(pm.rated&&MILESTONES.includes(p.streak)){pool='pzStreak';mood='cool';}
+    else if(pm.rating&&pm.rating>=before+150){pool='pzHard';mood='wow';}
+    else {pool='pzSolved';mood='cool';}
+  } else if(kind==='shown'){pool='pzShown';mood='sad';}
+  else if(pm.hints&&!pm.failed){pool='pzHinted';mood='think';}
+  else {pool='pzMissed';mood='laugh';}
+  const say=pawnzoFill(pawnzoPick(pool,pool,true),{n:p.streak,rating:pm.rating});
   document.getElementById('pzResult').innerHTML=`<div class="pz-result ${kind==='win'?'win':'loss'}">
     <div class="pz-res-head">${head} ${delta}</div>
     <div class="small" style="margin-top:2px">${info}</div>
+    <div class="pawnzo-note pz-say">${pawnzoFace(mood)}<div class="pv-bubble">${esc(say)}</div></div>
     ${pm.startFen?`<div class="pz-line">${pzSanLine(pm.startFen,pm.solution)}</div>`:''}
     ${pzExplainHtml(pm.themes)}</div>`;
   const nb=document.getElementById('pzNext');
@@ -1664,7 +1736,7 @@ document.getElementById('pzExit').onclick=()=>{
 document.getElementById('pzFromGame').onclick=()=>{
   const list=document.getElementById('pzList');
   if(!puzzleCands){ pzStatus('Analyze a game first (Import → it auto-scans, or Review → Scan game).'); list.innerHTML=''; return; }
-  if(!puzzleCands.length){ pzStatus('No clean tactics in the last analyzed game — try another game.'); list.innerHTML=''; return; }
+  if(!puzzleCands.length){ pzStatus(''); list.innerHTML=pawnzoNote('sad',PZ_EMPTY.noTactics); return; }
   pzStatus(puzzleCands.length+' puzzle'+(puzzleCands.length>1?'s':'')+' found — click one.');
   list.innerHTML=puzzleCands.map((c,k)=>`<div class="ccgame pzitem" data-k="${k}" style="padding:6px 8px;border-radius:6px;cursor:pointer">
     <b>Puzzle ${k+1}</b> · move ${Math.floor(c.i/2)+1} · ${c.solverWhite?'White':'Black'} to play
@@ -1800,6 +1872,7 @@ function gotoPly(n){
   bindMoveSpans(document.getElementById('moveList'));
   highlightReview();
   triggerAnalysis();
+  pawnzoReactToPly(n,prevPly); // brilliant → celebration, Clown move → honk
 }
 let fullHistory=null, startFen=null;
 
@@ -2000,7 +2073,7 @@ document.getElementById('ccFetch').onclick=async()=>{
   const nm=s=>s==='lichess'?'Lichess':'Chess.com';
   const parts=results.map(r=> r.ok?`${esc(r.user)} (${nm(r.site)}): ${r.games.length}`
     :`${esc(r.user)} (${nm(r.site)}): not found${/404/.test(r.err)?'':' — '+esc(r.err)}`);
-  if(!ccGames.length){ st.innerHTML='No games found.<br>'+parts.join(' · '); return; }
+  if(!ccGames.length){ st.innerHTML=pawnzoNote('think',PZ_EMPTY.noGames)+'<span class="num">'+parts.join(' · ')+'</span>'; return; }
   st.innerHTML=`<b>${ccGames.length} games</b> — click one to analyze.<br><span class="num">${parts.join(' · ')}</span>`;
   renderCcList(st,list);
 };
@@ -2214,6 +2287,198 @@ const CATS={
 };
 const GOOD_ORDER=['brilliant','great','best','excellent','good','book'];
 const BAD_ORDER=['inaccuracy','mistake','miss','blunder'];
+
+/* ---------- Move badges: glossy circles, crisp SVG glyphs (look the same on every device) ---------- */
+const BADGE_GLYPH={
+  '★':'<svg viewBox="0 0 24 24"><path d="M12 3.4l2.6 5.2 5.7.8-4.1 4 1 5.7-5.2-2.7-5.2 2.7 1-5.7-4.1-4 5.7-.8z" fill="#fff"/></svg>',
+  '✓':'<svg viewBox="0 0 24 24"><path d="M6 12.6l4 4 8-8.6" fill="none" stroke="#fff" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  '✗':'<svg viewBox="0 0 24 24"><path d="M7.2 7.2l9.6 9.6M16.8 7.2l-9.6 9.6" fill="none" stroke="#fff" stroke-width="3.3" stroke-linecap="round"/></svg>',
+  '○':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.2" fill="none" stroke="#fff" stroke-width="3.1"/></svg>',
+  '▦':'<svg viewBox="0 0 24 24"><path d="M4.4 6.5q3.9-1.9 7.3.5v11.4q-3.4-2.2-7.3-.5zM19.6 6.5q-3.9-1.9-7.3.5v11.4q3.4-2.2 7.3-.5z" fill="#fff"/></svg>',
+};
+function badgeInner(icon){ return BADGE_GLYPH[icon]||`<b>${icon}</b>`; }
+function rsBadge(m,title){ return `<span class="rs-badge" style="--c:${m.color}"${title?` title="${m.label}"`:''}>${badgeInner(m.icon)}</span>`; }
+
+/* ---------- Pawnzo — the clown mascot. Faces: mascot/<mood>.svg (npm run mascot) · voice: roast mode ----------
+   Lines starting with "@" talk to the player ("you") and are only used for your own imported games. */
+const PAWNZO='Pawnzo';
+const PZL={ // review verdicts
+  clean:['Zero Clown moves?! Somebody check if this is still a circus.','{acc}% accuracy and not a single honk. I\'m almost bored.',
+    'Clean game. I had my honk horn ready for nothing.','@Not one Clown move. Who taught you chess — me?',
+    'Flawless. The crowd wanted a show and got a lecture.','No blunders, no drama, no fun. Well played, I guess.',
+    '{acc}%? Put the red nose down — this one\'s a professional.','@No Clown moves. Are you sure you\'re in the right circus?',
+    'Not a single honk. My nose is losing its shine.'],
+  tidy:['No Clown moves, but plenty of wobbly ones.','No blunders! A few strange moves, but no honks.',
+    'Zero Clown moves. Zero brilliant ones either. Perfectly average.','Solid-ish. The tightrope wobbled, but nobody fell.',
+    'No disasters today. Low bar — but cleared.','{acc}% and no Clown moves. Steady, if not spectacular.',
+    'Zero blunders — just a lot of "hmm" moves.','No honks this time. I\'ll be back.'],
+  one:['One Clown move — {move}. The crowd only laughed a little.','{move}? HONK. Just the one, though.',
+    'Almost a clean game… then {move} happened.','One slip on {move}. Even jugglers drop a ball sometimes.',
+    'Everything was fine until {move}. Classic.','{move} was a gift. From whom? Santa Clown.',
+    'One honk, on {move}. I\'ll allow it.','Nice game — except {move}. We don\'t talk about {move}.',
+    '@{move}… you were so close to a clean game.'],
+  few:['{n} Clown moves. A respectable little circus act.','HONK ×{n}! It all started with {move}.',
+    '{n} blunders. Not a disaster, but the clowns noticed.','{n} Clown moves — I counted. I always count.',
+    'The circus came to town and played {move}.','{n} Clown moves? I\'ve trained seals with better focus.',
+    '{move} was the first of {n}. The crowd loved it.','Somewhere between genius and {n} Clown moves. Mostly the second.'],
+  many:['{n} Clown moves. HONK HONK! Even I can\'t juggle that many blunders.','{n} blunders. I\'m not laughing anymore — I\'m worried.',
+    'That wasn\'t a chess game. That was a full circus show.','{n} Clown moves. I\'m going to need a bigger nose.',
+    'I ran out of honks somewhere after {move}.','{n} blunders… shall we pretend this game never happened?',
+    'Even my pie-in-the-face act is less messy than this.','{n} Clown moves — the crowd demands a rematch. And lessons.',
+    '@{n} Clown moves. You\'re not a player, you\'re a performer.'],
+  brill:['{bmove}!! Okay, okay… that was actually genius.','{bmove}!! I dropped my juggling balls.',
+    '@{bmove}?! Who are you and what did you do with the clown?','{bmove}!! Brilliant. I\'m putting that on a poster.',
+    '{bmove} was so good I forgot to roast anything.','Hold on — {bmove}!! Did an engine sneak into the tent?',
+    '{bmove}!! The crowd is on its feet. So am I.','A brilliant move? In MY circus? {bmove}, take a bow.'],
+  chaos:['{bmove}!! and {move}?? Genius and chaos in one game.','Brilliant on {bmove}, Clown on {move}. Make up your mind!',
+    'From {bmove}!! to {move}?? — what a rollercoaster.','One brilliant, {n} Clown move{s}. Balance, I guess.',
+    '{bmove} was art. {move} was… also art. Modern art.','Half grandmaster, half clown: {bmove}!! and {move}??'],
+  // analysing (rotates while a review scans)
+  think:['Warming up the honk horn…','Counting the Clown moves…','Looking for brilliance. Results may vary…',
+    'Polishing my red nose…','Juggling variations…','Asking Stockfish nicely…','Setting up the big top…',
+    'Checking every move. Yes, even that one.','Sharpening the roasts…'],
+  // pop-ups on the board
+  popBrill:['WOW!!','Genius?!','No way!','Brilliant!!','Show-off!','Take a bow!'],
+  popClown:['HONK!','Oops!','Yikes!','Really?!','Honk honk!','Not again…','🤡'],
+  // puzzles
+  pzSolved:['Solved. Show-off.','Too easy? I\'ll find a harder one.','Clean solve — the crowd claps politely.',
+    'Correct! I had a honk ready for nothing.','Nice. Don\'t let it go to your head.','Got it! Are you sure you\'re a clown?','Smooth. Next!'],
+  pzHard:['That was a {rating} puzzle. I\'m impressed — don\'t tell anyone.','Way above your level — and you nailed it!',
+    'Okay, that one was hard. Respect.','{rating}?! Who let a grandmaster into the tent?'],
+  pzMissed:['HONK! Not that move.','Missed it! The pie was ready.','Close… no, not close.',
+    'That\'s a Clown move, my friend.','Oops. Let\'s pretend that didn\'t happen.','Next one — quickly, before anyone saw.'],
+  pzHinted:['A hint? Fine. I\'ll only tell everyone.','Solved… with a little help from your clown.','Hints are for jugglers with one ball.'],
+  pzShown:['Giving up? I\'ll allow it… this time.','Here\'s how it goes. Take notes.',
+    'Even clowns peek at the answers sometimes.','Study it. I\'ll test you later.'],
+  pzStreak:['{n} in a row? Who are you and what did you do with the clown?','{n} straight. Fine — you\'re good.',
+    'Streak {n}! The honk horn is getting dusty.','{n} in a row — you\'re on fire! 🔥','{n} without a miss. Is this still a circus?'],
+};
+const PZ_EMPTY={history:'The big top is empty. Bring me a game to roast!',
+  favs:'No favorites yet. Star a game — I promise not to laugh. Much.',
+  noGames:'No games found. Wrong name — or are you hiding them from me?',
+  noTactics:'No tactics to steal from that game. Try another one!'};
+const recentLines={};
+function pawnzoPick(pool,key,personal){ // random line, not one of the last few used for this key
+  let list=PZL[pool].filter(l=>personal||!l.startsWith('@'));
+  const rec=recentLines[key||pool]||(recentLines[key||pool]=[]);
+  const fresh=list.filter(l=>!rec.includes(l)); if(fresh.length)list=fresh;
+  const l=list[Math.floor(Math.random()*list.length)];
+  rec.push(l); if(rec.length>Math.min(4,PZL[pool].length-2))rec.shift();
+  return l;
+}
+function pawnzoFill(line,v){ return line.replace(/^@/,'').replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!=null?v[k]:m); }
+function pawnzoFace(mood,cls){ return `<img class="pawnzo-face${cls?' '+cls:''}" src="mascot/${mood}.svg" alt="${PAWNZO}" draggable="false">`; }
+function pawnzoNote(mood,text){ return `<div class="pawnzo-note">${pawnzoFace(mood)}<div class="pv-bubble">${esc(text)}</div></div>`; }
+['happy','laugh','wow','cool','think','sad'].forEach(m=>{ new Image().src=`mascot/${m}.svg`; }); // ~18 KB, so pop-ups appear instantly
+function hashStr(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0; return Math.abs(h); }
+
+/* review verdict — about you when it's your imported game, otherwise about the whole game */
+function pawnzoVerdictData(){
+  const me=currentMeSide, mine=d=>d&&(!me||d.moverWhite===(me==='w'));
+  let n=0, move=null, bmove=null, misses=0;
+  for(let i=0;i<fullHistory.length;i++){
+    const d=reviewData[i]; if(!mine(d))continue;
+    const san=(Math.floor(i/2)+1)+(i%2?'…':'.')+fullHistory[i];
+    if(d.cat==='blunder'){ n++; if(!move)move=san; }
+    else if(d.cat==='miss')misses++;
+    else if(d.cat==='brilliant'&&!bmove)bmove=san;
+  }
+  const a=reviewAccuracy||{}, acc=me?a[me]:(a.w!=null&&a.b!=null?Math.min(a.w,a.b):null);
+  let sc,mood;
+  if(n>=4){sc='many';mood='sad';} else if(bmove&&n){sc='chaos';mood='wow';} else if(bmove){sc='brill';mood='wow';}
+  else if(!n&&!misses&&acc!=null&&acc>=85){sc='clean';mood='cool';} else if(!n){sc='tidy';mood='happy';}
+  else if(n===1){sc='one';mood='laugh';} else {sc='few';mood='laugh';}
+  return {sc,mood,personal:!!me,vars:{n,s:n===1?'':'s',move,bmove,acc:acc==null?'':Math.round(acc)}};
+}
+let pawnzoVerdictIdx=null; // {key, idx} — same line every time you reopen a game; tap Pawnzo for another
+function pawnzoVerdictHtml(){
+  const v=pawnzoVerdictData(), pool=PZL[v.sc].filter(l=>v.personal||!l.startsWith('@'));
+  const key=gameKey()+'|'+v.sc;
+  if(!pawnzoVerdictIdx||pawnzoVerdictIdx.key!==key) pawnzoVerdictIdx={key, idx:hashStr(key)%pool.length};
+  const line=pawnzoFill(pool[pawnzoVerdictIdx.idx%pool.length],v.vars);
+  return `<div class="pawnzo-verdict" id="pawnzoVerdict" title="Tap ${PAWNZO} for another line">${pawnzoFace(v.mood)}
+    <div class="pv-bubble"><div class="pv-name">${PAWNZO.toUpperCase()}</div><span id="pawnzoLine">${esc(line)}</span></div></div>`;
+}
+function bindPawnzoVerdict(){
+  const el=document.getElementById('pawnzoVerdict'); if(!el)return;
+  el.onclick=()=>{ pawnzoVerdictIdx.idx++; const v=pawnzoVerdictData();
+    const pool=PZL[v.sc].filter(l=>v.personal||!l.startsWith('@'));
+    document.getElementById('pawnzoLine').textContent=pawnzoFill(pool[pawnzoVerdictIdx.idx%pool.length],v.vars);
+    const f=el.querySelector('.pawnzo-face'); f.classList.remove('wiggle'); void f.offsetWidth; f.classList.add('wiggle'); };
+}
+
+/* pop-up on the board corner: "HONK!" / "WOW!!" */
+let pawnzoPopT=null;
+function pawnzoPop(mood,text){
+  if(!uiPrefs.pops)return;
+  const box=document.querySelector('.boardbox'); if(!box)return;
+  const old=document.getElementById('pawnzoPop'); if(old)old.remove();
+  const el=document.createElement('div'); el.id='pawnzoPop'; el.className='pawnzo-pop';
+  el.innerHTML=pawnzoFace(mood)+`<div class="pp-bubble">${esc(text)}</div>`;
+  box.appendChild(el);
+  clearTimeout(pawnzoPopT);
+  pawnzoPopT=setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),320); },1900);
+}
+/* brilliant move: badge bounce + square glow + sparkle burst + chime */
+function celebrateBrilliant(sq){
+  const cell=boardEl.querySelector(`[data-sq="${sq}"]`); if(!cell)return;
+  cell.classList.add('brill-glow'); setTimeout(()=>cell.classList.remove('brill-glow'),1300);
+  const badge=cell.querySelector('.movebadge'); if(badge)badge.classList.add('brill-pop');
+  const r=(badge||cell).getBoundingClientRect();
+  const layer=document.createElement('div'); layer.className='sparkles';
+  layer.style.left=(r.left+r.width/2)+'px'; layer.style.top=(r.top+r.height/2)+'px';
+  const COLS=['#1aa6a6','#5eead4','#ffd23f','#ff9cc0','#ffffff'], N=16, reach=boardEl.getBoundingClientRect().width/8*1.3;
+  for(let i=0;i<N;i++){
+    const s=document.createElement('i'), a=i/N*Math.PI*2+Math.random()*0.35, d=reach*(0.6+Math.random()*0.6);
+    s.style.setProperty('--dx',(Math.cos(a)*d).toFixed(1)+'px'); s.style.setProperty('--dy',(Math.sin(a)*d).toFixed(1)+'px');
+    s.style.background=COLS[i%COLS.length]; s.style.animationDelay=Math.round(Math.random()*90)+'ms';
+    if(i%3===0)s.className='st';
+    layer.appendChild(s);
+  }
+  document.body.appendChild(layer); setTimeout(()=>layer.remove(),1200);
+  funSound('chime');
+}
+/* review navigation lands on a move: brilliant → celebration, Clown move → Pawnzo laughs (after the piece lands) */
+let pawnzoReactT=null;
+function pawnzoReactToPly(n,prevPly){
+  clearTimeout(pawnzoReactT);
+  if(!reviewData||n<1||n===prevPly||(n<prevPly&&prevPly-n===1))return; // stepping back doesn't replay reactions
+  const d=reviewData[n-1]; if(!d||(d.cat!=='brilliant'&&d.cat!=='blunder'))return;
+  pawnzoReactT=setTimeout(()=>{
+    if(ply!==n||puzzleMode)return; // moved on already
+    const last=game.history({verbose:true}).slice(-1)[0]; if(!last)return;
+    if(d.cat==='brilliant'){ celebrateBrilliant(last.to); pawnzoPop('wow',pawnzoPick('popBrill')); }
+    else { pawnzoPop('laugh',pawnzoPick('popClown')); funSound('honk'); }
+  },230);
+}
+/* fun sounds (synthesized): chime for brilliant, clown-horn honk for Clown moves */
+function funSound(type){
+  if(!uiPrefs.funSounds)return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const now=audioCtx.currentTime;
+    if(type==='chime'){
+      [[1046.5,0],[1568,0.09],[2093,0.18]].forEach(([f,t])=>{
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001,now+t); g.gain.exponentialRampToValueAtTime(0.16,now+t+0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001,now+t+0.7);
+        o.connect(g); g.connect(audioCtx.destination); o.start(now+t); o.stop(now+t+0.75);
+      });
+    } else if(type==='honk'){
+      [0,0.2].forEach(t=>{ // honk-honk: buzzy horn with a little pitch wobble
+        const o=audioCtx.createOscillator(), o2=audioCtx.createOscillator(), lp=audioCtx.createBiquadFilter(), g=audioCtx.createGain();
+        o.type='sawtooth'; o2.type='square'; lp.type='lowpass'; lp.frequency.value=1500; lp.Q.value=4;
+        o.frequency.setValueAtTime(360,now+t); o.frequency.linearRampToValueAtTime(330,now+t+0.14);
+        o2.frequency.setValueAtTime(362,now+t); o2.frequency.linearRampToValueAtTime(331,now+t+0.14);
+        g.gain.setValueAtTime(0.0001,now+t); g.gain.exponentialRampToValueAtTime(0.09,now+t+0.02);
+        g.gain.setValueAtTime(0.09,now+t+0.11); g.gain.exponentialRampToValueAtTime(0.0001,now+t+0.17);
+        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
+        o.start(now+t); o2.start(now+t); o.stop(now+t+0.2); o2.stop(now+t+0.2);
+      });
+    }
+  }catch(e){}
+}
 const PVAL={p:1,n:3,b:3,r:5,q:9,k:0};
 /* win% from centipawns — Lichess model */
 const winPct=cp=>50+50*(2/(1+Math.exp(-0.00368208*Math.max(-10000,Math.min(10000,cp))))-1);
@@ -2437,7 +2702,10 @@ document.getElementById('runReview').onclick=async()=>{
   if(!fullHistory||!fullHistory.length){alert('Load a game in the Import tab first.');return;}
   if(reviewRunning)return;
   reviewRunning=true;
-  try{ await runReviewScan(); } finally{ reviewRunning=false; }
+  // Pawnzo thinks out loud while the engine works
+  const sp=document.getElementById('scanPawnzo'), say=()=>{ sp.innerHTML=pawnzoNote('think',pawnzoPick('think')); };
+  say(); sp.hidden=false; const talk=setInterval(say,2600);
+  try{ await runReviewScan(); } finally{ reviewRunning=false; clearInterval(talk); sp.hidden=true; }
 };
 async function runReviewScan(){
   const depth=+document.getElementById('reviewDepth').value;
@@ -2547,7 +2815,7 @@ function renderReview(){
   const rows=(order)=>order.map(c=>{
     const m=CATS[c];
     return `<div class="rs-row">
-      <span class="ic"><span class="rs-badge" style="background:${m.color}">${m.icon}</span>${m.label}</span>
+      <span class="ic">${rsBadge(m)}${m.label}</span>
       <span style="text-align:center;color:${m.color}">${counts.w[c]}</span>
       <span style="text-align:center;color:${m.color}">${counts.b[c]}</span></div>`;
   }).join('');
@@ -2615,7 +2883,7 @@ function renderReview(){
     const d=reviewData[i],m=CATS[d.cat];
     const mvNum=Math.floor(i/2)+1+(i%2?'… ':'. ');
     return `<span class="hl-chip" data-ply="${i+1}"><span class="num">${label}</span> ${mvNum}${fullHistory[i]}
-      <span class="rs-badge" style="background:${m.color}">${m.icon}</span></span>`;
+      ${rsBadge(m)}</span>`;
   };
   let hlHtml='';
   const chips=[chip(pickBest(true),'White best'),chip(pickWorst(true),'White worst'),
@@ -2638,7 +2906,7 @@ function renderReview(){
         const d=reviewData[i],m=d?CATS[d.cat]:null;
         const mvNum=Math.floor(i/2)+1+(i%2?'… ':'. ');
         return `<div class="km-row" data-ply="${i+1}">
-          <span class="km-mv">${mvNum}${fullHistory[i]}${m?` <span class="rs-badge" style="background:${m.color}">${m.icon}</span>`:''}</span>
+          <span class="km-mv">${mvNum}${fullHistory[i]}${m?` ${rsBadge(m)}`:''}</span>
           <span class="km-desc">${state(reviewEvals[i])} → ${state(reviewEvals[i+1])}</span></div>`;
       }).join('')+'</div>';
     }
@@ -2660,14 +2928,16 @@ function renderReview(){
   for(let i=0;i<fullHistory.length;i++){
     const d=reviewData[i]; const m=d?CATS[d.cat]:null;
     if(i%2===0)moves+=`<span class="num">${i/2+1}.</span>`;
-    const badge=m?` <span class="rs-badge" style="background:${m.color}" title="${m.label}">${m.icon}</span>`:'';
+    const badge=m?` ${rsBadge(m,true)}`:'';
     moves+=`<span class="mv" data-ply="${i+1}">${fullHistory[i]}${badge}</span>`;
   }
   const fav=fullHistory&&isFavKey(gameKey(),currentGameId);
   const shareBtn=reviewAccuracy?`<div style="display:flex;gap:8px;margin:0 0 10px">
     <button class="btn" id="shareBtn" style="flex:1;margin:0">📤 Share report card</button>
     <button class="btn sec fav-btn${fav?' on':''}" id="favBtn" title="${fav?'Remove from favorites':'Save to favorites'}">${fav?'★ Saved':'☆ Save'}</button></div>`:'';
-  el.innerHTML=accuracy+shareBtn+openingHtml+graphHtml+hlHtml+momentsHtml+table+`<div style="margin-top:6px">${moves}</div>`;
+  const verdict=reviewAccuracy?pawnzoVerdictHtml():'';
+  el.innerHTML=verdict+accuracy+shareBtn+openingHtml+graphHtml+hlHtml+momentsHtml+table+`<div style="margin-top:6px">${moves}</div>`;
+  bindPawnzoVerdict();
   const sb=document.getElementById('shareBtn'); if(sb)sb.onclick=shareReport;
   const fb=document.getElementById('favBtn');
   if(fb)fb.onclick=()=>{
@@ -2828,7 +3098,7 @@ function renderHistory(){
       trend=` · last 5 vs previous 5: <b style="color:${d>=0?'var(--good)':'var(--bad)'}">${d>=0?'+':''}${d.toFixed(1)}%</b>`;
     }
     stats.innerHTML=`Your average accuracy over ${all.length} games: <b style="color:${accColorOf(avg(all))}">${avg(all).toFixed(1)}%</b>${trend}`;
-  } else stats.textContent=list.length?'':'No reviews yet — import a game and it will appear here.';
+  } else stats.innerHTML=list.length?'':pawnzoNote('happy',PZ_EMPTY.history);
   box.innerHTML=list.map((h,i)=>{
     const m=h.meta||{};
     const title=(m.white||m.black)?`${esc(m.white||'?')} vs ${esc(m.black||'?')}`:'Your game';
@@ -2876,6 +3146,7 @@ function renderFavorites(favs){
       <div class="hist-main"><div class="hist-title">${title}</div><div class="hist-sub">${sub}</div></div>
       <div class="hist-acc">${h?accCell('w','W')+'<br>'+accCell('b','B'):'<span class="small">not reviewed</span>'}</div></div>`;
   }).join('');
+  if(!favs.length)box.innerHTML=pawnzoNote('happy',PZ_EMPTY.favs);
   box.querySelectorAll('.hist-item').forEach(el=>{
     el.onclick=e=>{ if(e.target.closest('.fav-star'))return; openFavorite(loadFavs()[+el.dataset.i]); };
     el.querySelector('.fav-star').onclick=()=>{ // un-star → remove from the list
@@ -2987,6 +3258,18 @@ function renderSettings(){
   document.getElementById('setPieces').innerHTML=PIECE_SETS.map(([id,name])=>
     opt('pieces',id,name,`<i class="set-sw p"><i style="background-color:${L[3]};background-image:url('${pieceSrc('w','n',id)}')"></i><i style="background-color:${L[2]};background-image:url('${pieceSrc('b','k',id)}')"></i></i>`)).join('');
   set.querySelectorAll('.set-opt').forEach(b=>b.onclick=()=>setAppearance(b.dataset.k,b.dataset.v));
+  document.getElementById('setPawnzo').innerHTML=[
+    ['pops','Pop-up reactions','He shows up on the board for Brilliant and Clown moves'],
+    ['funSounds','Fun sounds','A honk for Clown moves, a chime for brilliant ones']]
+    .map(([k,t,d])=>`<button class="set-toggle${uiPrefs[k]?' on':''}" data-t="${k}" role="switch" aria-checked="${!!uiPrefs[k]}">
+      <span class="sw"></span><span class="st-txt"><b>${t}</b><small>${d}</small></span></button>`).join('');
+  set.querySelectorAll('.set-toggle').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.t; uiPrefs[k]=!uiPrefs[k];
+    try{ localStorage.setItem('uiPrefs_v1',JSON.stringify(uiPrefs)); }catch(e){}
+    renderSettings();
+    if(uiPrefs[k]&&k==='funSounds')funSound('chime');               // a little preview
+    if(uiPrefs[k]&&k==='pops')pawnzoPop('happy',`Hi, I'm ${PAWNZO}!`);
+  });
 }
 document.getElementById('settingsBtn').onclick=()=>{ document.getElementById('settings').hidden=false; renderSettings(); };
 document.getElementById('settingsClose').onclick=()=>{ document.getElementById('settings').hidden=true; };
