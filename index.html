@@ -494,6 +494,7 @@ header h1{margin-right:auto}
 .set-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;margin:16px 0 7px}
 .set-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .set-grid-2{grid-template-columns:repeat(3,1fr)}
+.set-note{font-weight:600;letter-spacing:0;text-transform:none;opacity:.8}
 .set-opt{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:6px 6px 5px;cursor:pointer;
   color:var(--text);font:600 11px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
 .set-opt:hover{border-color:var(--muted)}
@@ -686,7 +687,7 @@ header h1{margin-right:auto}
     <div class="set-head"><h2>Settings</h2>
       <button class="hdr-btn" id="settingsClose" aria-label="Close"><svg class="ui-ico" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg></button></div>
     <div class="set-title">APP COLOURS</div><div class="set-grid set-grid-2" id="setTheme"></div>
-    <div class="set-title">BOARD</div><div class="set-grid" id="setBoard"></div>
+    <div class="set-title">BOARD <span class="set-note">— each app colour remembers its own board</span></div><div class="set-grid" id="setBoard"></div>
     <div class="set-title">PIECES</div><div class="set-grid" id="setPieces"></div>
     <div class="set-title">PAWNZO &amp; CELEBRATIONS</div><div class="set-toggles" id="setPawnzo"></div>
   </div>
@@ -1127,8 +1128,12 @@ function applyAppearance(){
   const tc=document.querySelector('meta[name="theme-color"]'); if(tc)tc.content=THEME_BAR[uiPrefs.theme]||'#090a16';
   preloadPieces(uiPrefs.pieces);
 }
+const THEME_BOARD={neon:'lavender',violet:'lavender',day:'bigtop'}; // each app theme comes with a matching board
 async function setAppearance(key,val){
   uiPrefs[key]=val;
+  // the board you pick is remembered per theme; switching theme brings back that theme's board
+  if(key==='board') uiPrefs.boards=Object.assign({},uiPrefs.boards,{[uiPrefs.theme]:val});
+  if(key==='theme') uiPrefs.board=(uiPrefs.boards&&uiPrefs.boards[val])||THEME_BOARD[val]||uiPrefs.board;
   try{ localStorage.setItem('uiPrefs_v1',JSON.stringify(uiPrefs)); }catch(e){}
   renderSettings();
   if(key==='pieces') await preloadPieces(val); // swap only once the new set is loaded (no blank board)
