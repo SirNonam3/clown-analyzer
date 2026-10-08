@@ -65,6 +65,9 @@
               transition:transform .18s cubic-bezier(.2,.7,.3,1)}
   /* arrow */
   #arrowsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+  #usersvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7}
+  /* right-click square highlight (under the piece) */
+  .sq .mk{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.8}
   .boardbox{position:relative}
   /* right panel */
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;width:460px;flex:0 0 460px;zoom:var(--pz)}
@@ -484,6 +487,7 @@ header h1{margin-right:auto}
       <div class="boardbox">
         <div id="board"></div>
         <svg id="arrowsvg" viewBox="0 0 8 8" preserveAspectRatio="none"></svg>
+        <svg id="usersvg" viewBox="0 0 8 8" preserveAspectRatio="none"></svg><!-- your right-click arrows -->
       </div>
     </div>
   </div>
@@ -1182,6 +1186,7 @@ function render(){
   // "Return to game" appears only while trying own moves off a loaded game
   const rg=document.getElementById('returnGame');
   if(rg)rg.style.display=(fullHistory&&excursionPly!==null)?'block':'none';
+  paintMarks(); // your right-click drawings (cleared automatically when the position changes)
   updateFenOut();
 }
 
@@ -1274,7 +1279,61 @@ function squareFromPoint(x,y){
   if(flipped){f=7-f;rk=7-rk;}
   return FILES[f]+(8-rk);
 }
+/* ---------- your own annotations, like chess.com ----------
+   right-click a square = red highlight · right-drag = arrow (knight jumps bend into an L)
+   Shift = green · Ctrl/⌘ = blue · Alt = yellow · repeat to remove · left click / new position clears */
+let userMarks={fen:null,squares:{},arrows:[]}, markDrag=null;
+const MARK_COL={red:['#eb6150','#f0a03c'],green:['#3fae5a','#3fae5a'],blue:['#3b82f6','#3b82f6'],yellow:['#f2c94c','#f2c94c']}; // [square, arrow]
+function markColor(e){ return e.shiftKey?'green':(e.ctrlKey||e.metaKey)?'blue':e.altKey?'yellow':'red'; }
+function clearMarks(){ if(!userMarks.fen&&!markDrag)return; userMarks={fen:null,squares:{},arrows:[]}; paintMarks(); }
+function startMark(e,sq){
+  e.preventDefault();
+  markDrag={from:sq,to:sq,color:markColor(e)};
+  const move=ev=>{ const t=squareFromPoint(ev.clientX,ev.clientY); if(t&&t!==markDrag.to){ markDrag.to=t; paintMarks(); } };
+  const up=ev=>{
+    document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up);
+    const d=markDrag; markDrag=null; if(!d)return;
+    const to=squareFromPoint(ev.clientX,ev.clientY)||d.to;
+    if(userMarks.fen!==game.fen()) userMarks={fen:game.fen(),squares:{},arrows:[]};
+    if(to===d.from){ // toggle the square
+      if(userMarks.squares[to]===d.color) delete userMarks.squares[to]; else userMarks.squares[to]=d.color;
+    } else {          // toggle the arrow
+      const i=userMarks.arrows.findIndex(a=>a.from===d.from&&a.to===to);
+      if(i>=0&&userMarks.arrows[i].color===d.color) userMarks.arrows.splice(i,1);
+      else if(i>=0) userMarks.arrows[i].color=d.color;
+      else userMarks.arrows.push({from:d.from,to,color:d.color});
+    }
+    paintMarks();
+  };
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
+}
+function paintMarks(){
+  if(userMarks.fen&&userMarks.fen!==game.fen()) userMarks={fen:null,squares:{},arrows:[]}; // the position changed
+  boardEl.querySelectorAll('.sq .mk').forEach(m=>m.remove());
+  for(const [sq,c] of Object.entries(userMarks.squares)){
+    const cell=boardEl.querySelector(`[data-sq="${sq}"]`);
+    if(cell){ const m=document.createElement('span'); m.className='mk'; m.style.background=MARK_COL[c][0]; cell.appendChild(m); }
+  }
+  const list=userMarks.arrows.slice();
+  if(markDrag&&markDrag.to!==markDrag.from) list.push({from:markDrag.from,to:markDrag.to,color:markDrag.color,preview:true});
+  const us=document.getElementById('usersvg');
+  us.innerHTML=list.map((a,k)=>{
+    const p1=sqToXY(a.from), p2=sqToXY(a.to), col=MARK_COL[a.color][1];
+    const dx=p2.x-p1.x, dy=p2.y-p1.y, knight=(Math.abs(dx)===1&&Math.abs(dy)===2)||(Math.abs(dx)===2&&Math.abs(dy)===1);
+    // the line stops a little short so the head's tip lands just past the square's centre
+    const c=knight?(Math.abs(dy)===2?{x:p1.x,y:p2.y}:{x:p2.x,y:p1.y}):p1;
+    const lx=p2.x-c.x, ly=p2.y-c.y, len=Math.hypot(lx,ly)||1, ex=p2.x-lx/len*0.42, ey=p2.y-ly/len*0.42;
+    const d=knight?`M${p1.x} ${p1.y} L${c.x} ${c.y} L${ex.toFixed(3)} ${ey.toFixed(3)}`:`M${p1.x} ${p1.y} L${ex.toFixed(3)} ${ey.toFixed(3)}`;
+    return `<defs><marker id="um${k}" markerWidth="3.2" markerHeight="3.2" refX="0.6" refY="1.6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L3.2,1.6 L0,3.2 Z" fill="${col}"/></marker></defs>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="0.2" stroke-linejoin="round" stroke-linecap="round"
+        opacity="${a.preview?0.55:0.82}" marker-end="url(#um${k})"/>`;
+  }).join('');
+}
+document.querySelector('.boardbox').addEventListener('contextmenu',e=>e.preventDefault()); // right-click is for drawing
 function onSquarePointerDown(e,sq){
+  if(e.button===2){ startMark(e,sq); return; }               // right button: draw
+  if(e.button===undefined||e.button===0) clearMarks();       // a left click wipes your drawings (like chess.com)
   if(e.button!==undefined && e.button!==0)return; // left button / touch only
   if(loadedMode) loadedMode=false; // start interacting => leave nav mode at current pos
   // click-move onto a legal target of the current selection
