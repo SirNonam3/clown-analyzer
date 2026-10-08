@@ -351,7 +351,15 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .pawnzo-note .pv-bubble{font-size:12.5px}
 .pz-say{margin:8px 0 2px}
 .pz-say .pawnzo-face{width:40px;height:40px}
-#scanPawnzo .pawnzo-face{animation:pzBob 1.4s ease-in-out infinite}
+/* scan loader: Pawnzo juggling three pawns */
+.pawnzo-juggle{display:flex;align-items:flex-end;gap:10px;margin:8px 0 2px}
+.pawnzo-juggle .pv-bubble{margin-bottom:14px;font-size:12.5px}
+.pj-stage{position:relative;width:92px;height:100px;flex:0 0 auto}
+.pj-stage .pawnzo-face{position:absolute;left:19px;bottom:0;width:54px;height:54px;animation:pzBob 1.4s ease-in-out infinite}
+.pj-stage i{position:absolute;left:0;top:0;width:22px;height:22px;background:center/contain no-repeat;filter:drop-shadow(0 2px 3px #0008);
+  offset-path:path('M 14 40 C 14 -14, 78 -14, 78 40 C 78 48, 14 48, 14 40 Z');offset-rotate:0deg;animation:pjOrbit 1.35s linear infinite}
+.pj-stage i:nth-of-type(2){animation-delay:-.45s} .pj-stage i:nth-of-type(3){animation-delay:-.9s}
+@keyframes pjOrbit{to{offset-distance:100%}}
 @keyframes pzBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 /* pop-up on the board corner */
 .pawnzo-pop{position:absolute;left:8px;bottom:8px;z-index:30;display:flex;align-items:center;gap:4px;pointer-events:none;
@@ -378,6 +386,22 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .sq.mated::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(circle,#f0475f88 0%,#f0475f33 55%,transparent 75%);animation:mateGlow 1.4s var(--md,.5s) ease both}
 @keyframes mateGlow{0%{opacity:0}100%{opacity:1}}
+/* accuracy rings */
+.acc-ring{position:relative;width:74px;height:74px;margin:0 auto}
+.acc-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ar-bg{fill:none;stroke:#ffffff14;stroke-width:7}
+.ar-fg{fill:none;stroke-width:7;stroke-linecap:round}
+.ar-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.ar-txt b{font-size:18px;font-weight:800} .ar-txt small{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px}
+.acc-ring+.acc-elo{margin-top:4px}
+/* king in check: pulsing red ring */
+.sq.in-check::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:none;
+  box-shadow:inset 0 0 0 3px #f0475f,inset 0 0 18px #f0475f;animation:ckPulse 1.1s ease-in-out infinite}
+@keyframes ckPulse{0%,100%{opacity:.45}50%{opacity:1}}
+/* your Clown move: a quick jolt */
+.boardbox.shake{animation:shakeS .38s ease}
+@keyframes shakeS{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.fx-canvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:960}
 /* brilliant celebration */
 .sq.brill-glow::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   box-shadow:inset 0 0 0 3px #5eead4,inset 0 0 26px #1aa6a6cc;animation:brillGlow 1.3s ease forwards}
@@ -607,7 +631,7 @@ header h1{margin-right:auto}
     <div class="set-title">APP COLOURS</div><div class="set-grid set-grid-2" id="setTheme"></div>
     <div class="set-title">BOARD</div><div class="set-grid" id="setBoard"></div>
     <div class="set-title">PIECES</div><div class="set-grid" id="setPieces"></div>
-    <div class="set-title">PAWNZO, YOUR CLOWN</div><div class="set-toggles" id="setPawnzo"></div>
+    <div class="set-title">PAWNZO &amp; CELEBRATIONS</div><div class="set-toggles" id="setPawnzo"></div>
   </div>
 </div>
 
@@ -1025,7 +1049,7 @@ const BOARD_THEMES=[ // id, name, light, dark, last-move tint, engine-arrow colo
 function arrowColor(){ return (BOARD_THEMES.find(t=>t[0]===uiPrefs.board)||BOARD_THEMES[0])[5]; }
 const APP_THEMES=[['neon','Neon Night','linear-gradient(90deg,#090a16,#ff3b7f,#8b5cf6)'],
   ['violet','Midnight Violet','linear-gradient(90deg,#0d0f1a,#8b7cf8,#4fd1c5)']];
-const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon',pops:true,funSounds:true}; // pops/funSounds: Pawnzo reactions
+const uiPrefs={pieces:'cburnett',board:'lavender',theme:'neon',pops:true,funSounds:true,fx:true}; // pops/funSounds/fx: Pawnzo & celebrations
 try{ Object.assign(uiPrefs,JSON.parse(localStorage.getItem('uiPrefs_v1')||'{}')); }catch(e){}
 function pieceSrc(color,type,set){ return `pieces/${set||uiPrefs.pieces}/${color}${type.toUpperCase()}.svg`; }
 function preloadPieces(set){ // resolves when all 12 images are ready (or after 2 s)
@@ -1075,7 +1099,7 @@ let mateShownFen=null, mateShownAt=0; // checkmate position whose king-fall anim
 function onCheckmate(loser,fen){ // Pawnzo reacts once the king has fallen (puzzles have their own result card)
   if(game.fen()!==fen||puzzleMode)return;
   const k=boardEl.querySelector('.sq.mated'), sq=k&&k.dataset.sq; // keep the fallen king visible
-  if(loser!==mySide()){ pawnzoPop('cool',pawnzoPick('popMateWin'),sq); funSound('chime'); }
+  if(loser!==mySide()){ pawnzoPop('cool',pawnzoPick('popMateWin'),sq); funSound('chime'); neonBurstAt(boardEl,140); }
   else pawnzoPop('sad',pawnzoPick('popMateLose'),sq); // their move — no sound
 }
 const PZ_BADGE={ok:{color:'#22a35a',icon:'✓',label:'Correct'}, bad:{color:'#e5484d',icon:'✗',label:'Not the move'}};
@@ -1141,7 +1165,14 @@ function render(){
       boardBadge(lc,{color:'#26232f',icon:'#',label:'Checkmate'}); }
     if(wc) boardBadge(wc,{color:'#e7b54a',icon:'crown',label:'Winner'});
     if(fresh) setTimeout(()=>onCheckmate(loser,fen),650);
-  } else mateShownFen=null;
+  } else {
+    mateShownFen=null;
+    if(game.in_check()){ // pulsing red ring around the king in check
+      const c=game.turn(), b=game.board();
+      for(let r=0;r<8;r++)for(let f=0;f<8;f++){ const p=b[r][f];
+        if(p&&p.type==='k'&&p.color===c){ const cell=boardEl.querySelector(`[data-sq="${FILES[f]+(8-r)}"]`); if(cell)cell.classList.add('in-check'); } }
+    }
+  }
   // puzzle ✓ / ✗ — only while that move is still the last one on the board
   if(pzBadge && puzzleMode && last && last.to===pzBadge.sq){
     const cell=boardEl.querySelector(`[data-sq="${pzBadge.sq}"]`);
@@ -1385,7 +1416,7 @@ function showJudge(san,sq,cat){
   const jt=document.getElementById('judgeText');
   if(jt)jt.innerHTML=`Your move <b>${san}</b> ${rsBadge(mcat)} ${mcat.label}`;
   if(cat==='brilliant'){ celebrateBrilliant(sq); pawnzoPop('wow',pawnzoPick('popBrill'),sq); }
-  else if(cat==='blunder'){ pawnzoPop('laugh',pawnzoPick('popClown'),sq); funSound('honk'); }
+  else if(cat==='blunder'){ pawnzoPop('laugh',pawnzoPick('popClown'),sq); funSound('honk'); shakeBoard(); }
 }
 function clearJudge(){
   liveBadge=null; pendingJudge=null;
@@ -1491,6 +1522,7 @@ function pzThemeMatch(want){
 
 /* your puzzle rating (Elo, fast at first so it finds your level quickly) */
 const PZ_PROFILE='pzProfile_v1', PZ_SEEN='pzSeen_v1';
+let pzNewBest=false; // the last rated solve beat your best streak
 function pzProfile(){
   const d={rating:1500,games:0,streak:0,best:0,solved:0,failed:0};
   try{ return Object.assign(d,JSON.parse(localStorage.getItem(PZ_PROFILE)||'{}')); }catch(e){ return d; }
@@ -1501,7 +1533,8 @@ function pzRate(win,puzzleRating){
   const exp=1/(1+Math.pow(10,(puzzleRating-p.rating)/400));
   const d=Math.round(K*((win?1:0)-exp));
   p.rating=Math.max(400,p.rating+d); p.games++;
-  if(win){ p.solved++; p.streak++; p.best=Math.max(p.best,p.streak); } else { p.failed++; p.streak=0; }
+  pzNewBest=false;
+  if(win){ p.solved++; p.streak++; pzNewBest=p.streak>p.best&&p.streak>=3; p.best=Math.max(p.best,p.streak); } else { p.failed++; p.streak=0; }
   try{ localStorage.setItem(PZ_PROFILE,JSON.stringify(p)); }catch(e){}
   pzShowStats(d);
   return d;
@@ -1737,6 +1770,10 @@ function pzShowResult(kind){ // kind: 'win' | 'loss' | 'shown'
   else if(pm.hints&&!pm.failed){pool='pzHinted';mood='think';}
   else {pool='pzMissed';mood='laugh';}
   const say=pawnzoFill(pawnzoPick(pool,pool,true),{n:p.streak,rating:pm.rating});
+  if(kind==='win'){ // clean solve: neon fireworks + chime; a new best streak gets a second, bigger burst
+    funSound('chime'); neonBurstAt(boardEl,110);
+    if(pm.rated&&pzNewBest){ setTimeout(()=>neonBurstAt(boardEl,170),450); pzNewBest=false; }
+  }
   document.getElementById('pzResult').innerHTML=`<div class="pz-result ${kind==='win'?'win':'loss'}">
     <div class="pz-res-head">${head} ${delta}</div>
     <div class="small" style="margin-top:2px">${info}</div>
@@ -2512,7 +2549,43 @@ function celebrateBrilliant(sq,silent){
     layer.appendChild(s);
   }
   document.body.appendChild(layer); setTimeout(()=>layer.remove(),1200);
-  if(!silent)funSound('chime');
+  if(!silent){ funSound('chime'); neonBurstAt(badge||cell,90); } // fireworks only for your own brilliancies
+}
+/* ---------- celebrations (Settings → Celebrations; off with "reduce motion") ---------- */
+function celebrationsOn(){ return uiPrefs.fx!==false && !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }
+/* neon fireworks: glowing pink/violet sparks bursting from (x,y) in page pixels — time-based, so 60 Hz and 120 Hz look the same */
+function neonBurst(x,y,count){
+  if(!celebrationsOn())return;
+  const dpr=Math.min(2,window.devicePixelRatio||1), cv=document.createElement('canvas');
+  cv.className='fx-canvas'; cv.width=innerWidth*dpr; cv.height=innerHeight*dpr;
+  document.body.appendChild(cv);
+  const g=cv.getContext('2d'); g.scale(dpr,dpr);
+  const COL=['#ff3b7f','#a78bfa','#5eead4','#ffd1e8','#ffffff'], parts=[];
+  for(let i=0;i<(count||110);i++){
+    const a=Math.random()*Math.PI*2, sp=2+Math.random()*7;
+    parts.push({x,y,px:x,py:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:COL[i%COL.length],s:2+Math.random()*2.2,life:1,decay:.012+Math.random()*.012});
+  }
+  const t0=performance.now(); let last=t0;
+  (function frame(now){
+    now=now||performance.now(); const dt=Math.min(3,(now-last)/16.67); last=now;
+    g.clearRect(0,0,innerWidth,innerHeight); g.globalCompositeOperation='lighter'; g.lineCap='round';
+    const drag=Math.pow(.985,dt); let alive=0;
+    for(const p of parts){
+      if(p.life<=0)continue; alive++;
+      p.px=p.x; p.py=p.y; p.vx*=drag; p.vy=p.vy*drag+.05*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=p.decay*dt;
+      g.globalAlpha=Math.max(0,Math.min(1,p.life*1.6)); g.strokeStyle=p.c; g.lineWidth=p.s; g.shadowColor=p.c; g.shadowBlur=12;
+      g.beginPath(); g.moveTo(p.px-p.vx*2,p.py-p.vy*2); g.lineTo(p.x,p.y); g.stroke();
+    }
+    if(alive&&performance.now()-t0<4000)requestAnimationFrame(frame); else cv.remove();
+  })();
+}
+function neonBurstAt(el,count){ if(!el)return; const r=el.getBoundingClientRect(); neonBurst(r.left+r.width/2,r.top+r.height/2,count); }
+/* a little jolt for your own Clown moves */
+function shakeBoard(){
+  if(!celebrationsOn())return;
+  const b=document.querySelector('.boardbox'); if(!b)return;
+  b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+  setTimeout(()=>b.classList.remove('shake'),450);
 }
 /* review navigation lands on a move: brilliant → celebration, Clown move → Pawnzo laughs (after the piece lands) */
 let pawnzoReactT=null;
@@ -2525,7 +2598,7 @@ function pawnzoReactToPly(n,prevPly){
     const last=game.history({verbose:true}).slice(-1)[0]; if(!last)return;
     const ours=d.moverWhite===(mySide()==='w'); // sounds and cheers only for our own moves
     if(d.cat==='brilliant'){ celebrateBrilliant(last.to,!ours); if(ours)pawnzoPop('wow',pawnzoPick('popBrill'),last.to); }
-    else if(ours){ pawnzoPop('laugh',pawnzoPick('popClown'),last.to); funSound('honk'); }
+    else if(ours){ pawnzoPop('laugh',pawnzoPick('popClown'),last.to); funSound('honk'); shakeBoard(); }
     else pawnzoPop('cool',pawnzoPick('popGift'),last.to); // the opponent's Clown move: gloat, quietly
   },230);
 }
@@ -2780,8 +2853,11 @@ document.getElementById('runReview').onclick=async()=>{
   if(!fullHistory||!fullHistory.length){alert('Load a game in the Import tab first.');return;}
   if(reviewRunning)return;
   reviewRunning=true;
-  // Pawnzo thinks out loud while the engine works
-  const sp=document.getElementById('scanPawnzo'), say=()=>{ sp.innerHTML=pawnzoNote('think',pawnzoPick('think')); };
+  // Pawnzo juggles pawns (from your piece set) and thinks out loud while the engine works
+  const sp=document.getElementById('scanPawnzo');
+  sp.innerHTML=`<div class="pawnzo-juggle"><div class="pj-stage">${pawnzoFace('think')}${['w','b','w'].map(c=>
+    `<i style="background-image:url('${pieceSrc(c,'p')}')"></i>`).join('')}</div><div class="pv-bubble" id="scanLine"></div></div>`;
+  const say=()=>{ const l=document.getElementById('scanLine'); if(l)l.textContent=pawnzoPick('think'); };
   say(); sp.hidden=false; const talk=setInterval(say,2600);
   try{ await runReviewScan(); } finally{ reviewRunning=false; clearInterval(talk); sp.hidden=true; }
 };
@@ -2881,6 +2957,22 @@ async function runReviewScan(){
   if(window.NativeBridge)NativeBridge.showInterstitialIfDue(); // store apps, free tier only
 }
 
+let accAnim={key:null,t0:0}; // count up once per review; a re-render mid-count continues where it was
+function animateAccRings(root){
+  const rings=[...root.querySelectorAll('.ar-fg')], nums=[...root.querySelectorAll('.ar-txt [data-acc]')];
+  if(!rings.length)return;
+  const key=gameKey()+'|'+(reviewAccuracy?reviewAccuracy.w+','+reviewAccuracy.b:'');
+  if(key!==accAnim.key) accAnim={key, t0:celebrationsOn()?performance.now():-1e9};
+  const C=2*Math.PI*30;
+  const paint=e=>{
+    rings.forEach(r=>r.setAttribute('stroke-dashoffset',(C*(1-e*(+r.dataset.v)/100)).toFixed(1)));
+    nums.forEach(n=>{ if(n.dataset.acc!=='')n.textContent=(+n.dataset.acc*e).toFixed(1); });
+  };
+  (function step(){
+    const k=Math.min(1,(performance.now()-accAnim.t0)/1300); paint(1-Math.pow(1-k,3));
+    if(k<1&&rings[0].isConnected)requestAnimationFrame(step);
+  })();
+}
 function renderReview(){
   const el=document.getElementById('reviewList');
   if(!reviewData){el.innerHTML='';return;}
@@ -2899,12 +2991,13 @@ function renderReview(){
   }).join('');
   // accuracy + estimated Elo header
   const accColor=accColorOf, estElo=estEloOf;
-  const accCell=(label,v)=>{
-    const txt=(v==null)?'—':v.toFixed(1)+'%';
+  const RING=2*Math.PI*30;
+  const accCell=(label,v)=>{ // ring that fills while the number counts up (animateAccRings)
     const col=(v==null)?'var(--muted)':accColor(v);
     const elo=estElo(v);
-    return `<div class="acc-cell"><div class="acc-label">${label}</div>
-      <div class="acc-val" style="color:${col}">${txt}</div>
+    return `<div class="acc-cell"><div class="acc-ring"><svg viewBox="0 0 76 76"><circle class="ar-bg" cx="38" cy="38" r="30"/>
+      <circle class="ar-fg" cx="38" cy="38" r="30" stroke="${col}" stroke-dasharray="${RING.toFixed(1)}" stroke-dashoffset="${RING.toFixed(1)}" data-v="${v==null?0:v}"/></svg>
+      <div class="ar-txt"><b data-acc="${v==null?'':v}" style="color:${col}">${v==null?'—':v.toFixed(1)}</b><small>${label}</small></div></div>
       <div class="acc-elo">${elo==null?'':'≈ '+elo+' Elo'}</div></div>`;
   };
   const accuracy=reviewAccuracy?`<div class="acc-box">
@@ -3015,7 +3108,7 @@ function renderReview(){
     <button class="btn sec fav-btn${fav?' on':''}" id="favBtn" title="${fav?'Remove from favorites':'Save to favorites'}">${fav?'★ Saved':'☆ Save'}</button></div>`:'';
   const verdict=reviewAccuracy?pawnzoVerdictHtml():'';
   el.innerHTML=verdict+accuracy+shareBtn+openingHtml+graphHtml+hlHtml+momentsHtml+table+`<div style="margin-top:6px">${moves}</div>`;
-  bindPawnzoVerdict();
+  bindPawnzoVerdict(); animateAccRings(el);
   const sb=document.getElementById('shareBtn'); if(sb)sb.onclick=shareReport;
   const fb=document.getElementById('favBtn');
   if(fb)fb.onclick=()=>{
@@ -3338,7 +3431,8 @@ function renderSettings(){
   set.querySelectorAll('.set-opt').forEach(b=>b.onclick=()=>setAppearance(b.dataset.k,b.dataset.v));
   document.getElementById('setPawnzo').innerHTML=[
     ['pops','Pop-up reactions','He shows up on the board for Brilliant and Clown moves'],
-    ['funSounds','Fun sounds','A honk for Clown moves, a chime for brilliant ones']]
+    ['funSounds','Fun sounds','A honk for Clown moves, a chime for brilliant ones'],
+    ['fx','Celebrations','Fireworks, board shake and counting-up rings']]
     .map(([k,t,d])=>`<button class="set-toggle${uiPrefs[k]?' on':''}" data-t="${k}" role="switch" aria-checked="${!!uiPrefs[k]}">
       <span class="sw"></span><span class="st-txt"><b>${t}</b><small>${d}</small></span></button>`).join('');
   set.querySelectorAll('.set-toggle').forEach(b=>b.onclick=()=>{
@@ -3347,6 +3441,7 @@ function renderSettings(){
     renderSettings();
     if(uiPrefs[k]&&k==='funSounds')funSound('chime');               // a little preview
     if(uiPrefs[k]&&k==='pops')pawnzoPop('happy',`Hi, I'm ${PAWNZO}!`);
+    if(uiPrefs[k]&&k==='fx')neonBurstAt(document.querySelector(`.set-toggle[data-t="fx"]`),70);
   });
 }
 document.getElementById('settingsBtn').onclick=()=>{ document.getElementById('settings').hidden=false; renderSettings(); };
