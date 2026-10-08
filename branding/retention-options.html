@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clown Analyzer — stickers, report card, light theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Righteous&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#090a16;--panel:#12142b;--panel2:#1a1d3d;--border:#2e3163;--text:#eef0ff;--muted:#9aa0c8;--accent:#ff3b7f;
+    --grad:linear-gradient(135deg,#ff3b7f,#8b5cf6)}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1100px 520px at 72% -10%,#2a1145 0%,transparent 60%),linear-gradient(180deg,#090a16,#07080f);
+    color:var(--text);font-family:Inter,'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  h1{font-size:20px;margin:18px 20px 2px} h2{font-size:17px;margin:30px 20px 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 20px 12px;max-width:920px}
+  .bar{position:sticky;top:0;z-index:10;background:#090a16ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+    padding:10px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px}
+  .pick{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:0 20px}
+  .card{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;transition:border-color .15s}
+  .card.sel{border-color:var(--accent);box-shadow:0 0 0 3px #ff3b7f33}
+  .num{display:inline-block;min-width:22px;height:22px;border-radius:7px;background:var(--grad);color:#fff;text-align:center;font-size:12px;line-height:22px;margin-right:6px;font-weight:800}
+  .t{font-weight:800;font-size:15px;margin-bottom:2px} .d{color:var(--muted);font-size:12px;margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 20px 0}
+  .chip{background:var(--panel);border:2px solid var(--border);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:12.5px;font-weight:600}
+  .chip.sel{border-color:var(--accent)}
+  /* achievement list */
+  .alist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px;padding:0 20px}
+  .arow{display:flex;gap:9px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:7px 9px;font-size:12.5px}
+  .arow b{display:block;font-size:13px} .arow span{color:var(--muted)}
+  .arow .grp{margin-left:auto;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+  /* sticker sheets */
+  .sheet{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .stk{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:10.5px;font-weight:700;gap:3px}
+  .stk small{font-weight:600;color:var(--muted);font-size:9.5px}
+  .stk .prog{width:70%;height:4px;border-radius:3px;background:#ffffff1a;overflow:hidden}
+  .stk .prog i{display:block;height:100%;background:var(--grad)}
+  /* style A: enamel pin */
+  .pin{width:62px;height:62px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 28%,#fff6 0,transparent 42%),var(--c);
+    box-shadow:0 0 0 3px #e7b54a,0 0 0 5px #8a6420,0 4px 10px #0009,inset 0 -4px 8px #0004}
+  .pin svg{width:32px;height:32px}
+  .pin.lock{filter:grayscale(1) brightness(.45);box-shadow:0 0 0 3px #555,0 0 0 5px #333}
+  /* style B: circus ticket */
+  .tix{width:74px;height:58px;border-radius:6px;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background:repeating-linear-gradient(90deg,#d81f3a 0 6px,#e8344d 6px 12px);box-shadow:0 4px 10px #0009;color:#fff6ee}
+  .tix::before,.tix::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--panel)}
+  .tix::before{left:-6px} .tix::after{right:-6px}
+  .tix .in{width:58px;height:44px;border:1.5px dashed #fff6eecc;border-radius:4px;display:flex;align-items:center;justify-content:center}
+  .tix svg{width:26px;height:26px}
+  .tix.lock{filter:grayscale(1) brightness(.5)}
+  /* style C: neon sign */
+  .neo{width:62px;height:62px;border-radius:14px;background:#0b0c1d;border:1.5px solid var(--c);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 10px var(--c),inset 0 0 10px color-mix(in srgb,var(--c) 45%,transparent)}
+  .neo svg{width:32px;height:32px;filter:drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 1px #fff)}
+  .neo.lock{border-color:#3a3d5c;box-shadow:none;opacity:.55} .neo.lock svg{filter:none}
+  .toast{display:flex;align-items:center;gap:10px;background:#fff;color:#1b1638;border-radius:14px;padding:9px 12px;margin-top:10px;box-shadow:0 6px 18px #0008}
+  .toast img{width:40px;height:40px} .toast b{display:block;font-size:13px} .toast span{font-size:11.5px;color:#5a5470}
+  /* report cards */
+  .rc{width:100%;max-width:300px;aspect-ratio:720/920;margin:0 auto;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 10px 26px #000a;font-family:Inter,sans-serif}
+  /* light theme mocks */
+  .mock{border-radius:14px;overflow:hidden;background:var(--mbg);color:var(--mtext);border:1px solid var(--mborder)}
+  .m-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--mborder);background:var(--mhead)}
+  .m-head img{width:26px;height:26px;border-radius:7px}
+  .m-title{font-family:Righteous,Inter,sans-serif;font-size:16px;background:var(--mtg);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .m-gear{margin-left:auto;width:24px;height:24px;border-radius:7px;border:1px solid var(--mborder);background:var(--mpanel2)}
+  .m-body{padding:10px;display:grid;grid-template-columns:120px 1fr;gap:10px}
+  .m-board{display:grid;grid-template-columns:repeat(4,1fr);aspect-ratio:1;border-radius:8px;overflow:hidden}
+  .m-board i{display:block}
+  .m-panel{background:var(--mpanel);border:1px solid var(--mborder);border-radius:12px;padding:8px;box-shadow:0 4px 14px #0000001a}
+  .m-tabs{display:flex;gap:3px;background:var(--mpanel2);padding:3px;border-radius:9px;margin-bottom:7px}
+  .m-tab{flex:1;text-align:center;font-size:9px;font-weight:600;color:var(--mmuted);padding:4px 0;border-radius:7px}
+  .m-tab.on{background:var(--mgrad);color:#fff}
+  .m-verdict{display:flex;gap:6px;align-items:center;background:var(--mpanel2);border-radius:9px;padding:5px;font-size:10px;font-weight:600}
+  .m-verdict img{width:28px;height:28px}
+  .m-btn{margin-top:7px;text-align:center;font-size:10.5px;font-weight:700;padding:6px;border-radius:8px;background:var(--mgrad);color:#fff}
+  .m-rows{font-size:10px;margin-top:6px;color:var(--mtext)} .m-rows div{display:flex;justify-content:space-between;padding:1px 0}
+</style>
+</head>
+<body>
+<div class="bar"><b>Your picks:</b><span class="pick" id="pk0"></span><span class="pick" id="pk1"></span><span class="pick" id="pk2"></span><span class="pick" id="pk3"></span></div>
+
+<h1>🏆 Clown Analyzer — stickers, report card &amp; light theme (step 4)</h1>
+<p class="sub">Click to choose. Reply with something like "stickers B, card C, light A, follow device" — and tell me if you'd add,
+  rename or drop any achievement.</p>
+
+<h2>1 · Achievements</h2>
+<p class="sub">16 to start with. Earned automatically from your own imported games, puzzles and the app — they unlock with a Pawnzo pop-up
+  and live in a new <b>Stickers</b> view in History. Locked ones show your progress.</p>
+<div class="alist" id="alist"></div>
+
+<h2>2 · Sticker style</h2>
+<div class="grid" id="g0" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))"></div>
+
+<h2>3 · Shareable report card</h2>
+<p class="sub">The image people post after a review — free advertising, so it should look great. All three include Pawnzo's verdict.</p>
+<div class="grid" id="g1"></div>
+
+<h2>4 · Light theme</h2>
+<p class="sub">An option next to Neon Night and Midnight Violet in Settings.</p>
+<div class="grid" id="g2"></div>
+<div class="chips" id="g3"></div>
+<div style="height:60px"></div>
+
+<script>
+/* ---------- simple icons (24×24, white) ---------- */
+const S=(d,extra='')=>`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICON={
+  tent:S('<path d="M3 20h18L12 5z"/><path d="M12 5V2.5l3 1.2-3 1.2"/><path d="M10 20l2-5 2 5"/>'),
+  bang:`<svg viewBox="0 0 24 24"><text x="12" y="17.5" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="15" fill="#fff">!!</text></svg>`,
+  tophat:S('<path d="M7 17V6.5h10V17"/><path d="M3.5 17.5h17"/><path d="M7 13.5h10"/>'),
+  nonose:S('<circle cx="12" cy="12" r="6.5"/><path d="M5 19L19 5"/>'),
+  target:S('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="#fff"/>'),
+  rope:S('<path d="M2.5 15c3-2 6-2 9.5 0s6.5 2 9.5 0"/><circle cx="12" cy="7.5" r="2"/><path d="M12 9.5v4M8.5 11.5h7"/>'),
+  crown:S('<path d="M4.5 17.5l-1-9 5 4 3.5-6.5 3.5 6.5 5-4-1 9z"/><path d="M4.6 20.3h14.8"/>'),
+  balls:S('<circle cx="6.5" cy="15.5" r="3"/><circle cx="12" cy="7.5" r="3"/><circle cx="17.5" cy="15.5" r="3"/>'),
+  flame:S('<path d="M12 21c-4 0-6.5-2.8-6.5-6.3 0-3.7 3-5.6 3.6-9.7 2.4 1.6 3.4 3.7 3.4 5.6 1-.7 1.7-1.9 1.8-3.3 2.5 2 4.2 4.5 4.2 7.4 0 3.5-2.5 6.3-6.5 6.3z"/>'),
+  inferno:S('<path d="M8.5 21c-3 0-5-2.1-5-4.8 0-2.8 2.3-4.3 2.8-7.4 1.8 1.2 2.6 2.8 2.6 4.3"/><path d="M14 21c-3.5 0-5.6-2.4-5.6-5.4 0-3.2 2.6-4.9 3.1-8.4 2.1 1.4 3 3.2 3 4.9.8-.6 1.5-1.6 1.5-2.8 2.2 1.7 3.6 3.9 3.6 6.4 0 3-2.1 5.3-5.6 5.3z"/>'),
+  puzzle:S('<path d="M5 7h3a1 1 0 0 0 1-1 2 2 0 0 1 4 0 1 1 0 0 0 1 1h3v3a1 1 0 0 0 1 1 2 2 0 0 1 0 4 1 1 0 0 0-1 1v3h-3a1 1 0 0 1-1-1 2 2 0 0 0-4 0 1 1 0 0 1-1 1H5v-3a1 1 0 0 1 1-1 2 2 0 0 0 0-4 1 1 0 0 1-1-1z"/>'),
+  puzstar:S('<path d="M12 3.5l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>'),
+  trophy:S('<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8.5 20.5h7M10 17h4v3.5h-4z"/>'),
+  mountain:S('<path d="M2.5 19.5l7-11 4.5 7 2.5-3.5 5 7.5z"/><path d="M9.5 8.5l1.5 2.4"/>'),
+  king:S('<path d="M12 3v4M10 5h4"/><path d="M7.5 20.5h9M8.5 17.5c-1.8-1.6-3-3.6-3-5.4 0-2.3 2-3.6 3.6-2.7C10.4 10 11.4 11 12 12c.6-1 1.6-2 2.9-2.6 1.6-.9 3.6.4 3.6 2.7 0 1.8-1.2 3.8-3 5.4z"/>'),
+  heart:S('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
+  palette:S('<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.9 1.4-1.9-.5-1.1.2-2.3 1.4-2.3H17a3.5 3.5 0 0 0 3.5-3.5C20.5 7.3 16.7 3.5 12 3.5z"/><circle cx="8" cy="11" r="1.1" fill="#fff"/><circle cx="11.5" cy="7.8" r="1.1" fill="#fff"/><circle cx="15.5" cy="9.5" r="1.1" fill="#fff"/>'),
+};
+/* ---------- the achievements: [icon, name, how, group, colour, demo progress (null = unlocked)] ---------- */
+const ACH=[
+  ['tent','Opening Night','Review your first game','reviews','#ff3b7f',null],
+  ['bang','Brilliant!','Play your first brilliant move','reviews','#1aa6a6',null],
+  ['tophat','Ringmaster','10 brilliant moves','reviews','#8b5cf6',[3,10]],
+  ['nonose','Honk-free','A game (20+ moves) with no Clown move','reviews','#22a35a',null],
+  ['target','Bullseye','95% accuracy in a game','reviews','#f59e0b',[0,1]],
+  ['rope','Tightrope','Win a game you were losing','reviews','#3b82f6',null],
+  ['crown','Clown College','Win despite 3+ Clown moves','reviews','#e5484d',[0,1]],
+  ['balls','Juggler','Review 25 of your games','reviews','#ec4899',[12,25]],
+  ['flame','Fire Breather','10 puzzles in a row','puzzles','#f97316',null],
+  ['inferno','Human Torch','25 puzzles in a row','puzzles','#ef4444',[11,25]],
+  ['puzzle','Puzzle Rookie','Solve 10 puzzles','puzzles','#14b8a6',null],
+  ['puzstar','Puzzle Pro','Solve 100 puzzles','puzzles','#a855f7',[64,100]],
+  ['trophy','Puzzle Legend','Solve 500 puzzles','puzzles','#eab308',[64,500]],
+  ['mountain','Mountaineer','Reach a 1800 puzzle rating','puzzles','#0ea5e9',[1612,1800]],
+  ['king','Mate Maker','Solve 25 checkmate puzzles','puzzles','#db2777',[9,25]],
+  ['heart','Superfan','Star 5 favourite games','app','#f43f5e',null],
+];
+document.getElementById('alist').innerHTML=ACH.map(a=>`<div class="arow">${sticker(0,a,true)}<div><b>${a[1]}</b><span>${a[2]}</span></div><span class="grp">${a[3]}</span></div>`).join('');
+function sticker(style,a,small){
+  const [ic,name,,, c,prog]=a, lock=!!prog, sz=small?' style="width:34px;height:34px;flex:0 0 auto"':'';
+  if(style===0)return `<div class="pin${lock?' lock':''}" style="--c:${c}${small?';width:34px;height:34px;box-shadow:0 0 0 2px #e7b54a,0 2px 5px #0008':''}">${ICON[ic].replace('<svg','<svg style="width:'+(small?18:32)+'px;height:'+(small?18:32)+'px"')}</div>`;
+  if(style===1)return `<div class="tix${lock?' lock':''}"${sz}><div class="in">${ICON[ic]}</div></div>`;
+  return `<div class="neo${lock?' lock':''}" style="--c:${c}">${ICON[ic]}</div>`;
+}
+const STYLES=[['A','Enamel pins','Shiny round pins with a gold rim — like a collector\'s jacket.'],
+  ['B','Circus tickets','Red-and-cream ticket stubs, perforated edges.'],
+  ['C','Neon signs','Glowing neon icons — matches Neon Night.']];
+const SHOW=[0,1,3,8,10,15,2,4,7,9,11,13]; // a sample sheet: 6 unlocked + 6 locked (with progress)
+
+/* ---------- report card mock-ups ---------- */
+const PZ='../mascot/', LOGO='../logo.svg';
+const CARDS=[
+  ['A','Clean','Today\'s card, tidied: rings, verdict and the eval graph.',()=>`
+  <div class="rc" style="background:linear-gradient(180deg,#14102f,#07080f);color:#eef0ff;padding:16px 14px">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px"><img src="${LOGO}" style="width:30px;border-radius:8px">
+      <span style="font-family:Righteous;font-size:19px;background:linear-gradient(90deg,#ff5c93,#a78bfa);-webkit-background-clip:text;color:transparent">CLOWN ANALYZER</span></div>
+    <div style="text-align:center;font-size:9px;color:#9aa0c8;letter-spacing:1px;margin-top:2px">GAME REPORT</div>
+    <div style="text-align:center;font-weight:700;font-size:13px;margin-top:10px">sirnonam3 vs kkikk1</div>
+    <div style="text-align:center;font-size:9.5px;color:#ff7aa8;margin-top:2px">Italian Game · 0-1</div>
+    <div style="display:flex;justify-content:space-around;margin-top:10px">${ring(91.9,'You')}${ring(63.8,'Opponent')}</div>
+    <div style="display:flex;gap:6px;align-items:center;background:#ffffff10;border-radius:10px;padding:6px;margin-top:10px;font-size:9.5px;font-weight:600">
+      <img src="${PZ}cool.svg" style="width:28px">Zero Clown moves?! Somebody check if this is still a circus.</div>
+    ${graph('#ece9f8')}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;font-size:8.5px;text-align:center">${cnt('!!','#1aa6a6',1)}${cnt('★','#5fb35f',14)}${cnt('?','#e08a3c',1)}${cnt('??','#d24a4a',0)}</div>
+    <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:8.5px;color:#9aa0c8">sirnonam3.github.io/clown-analyzer</div>
+  </div>`],
+  ['B','Circus poster','A vintage circus poster: "Tonight\'s Show", starring you.',()=>`
+  <div class="rc" style="background:#fbf1de;color:#3a1020;border:7px solid #d81f3a;outline:3px solid #fbf1de;outline-offset:-12px;padding:16px 14px">
+    <div style="position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% -10%,#d81f3a14 0 6deg,transparent 6deg 12deg)"></div>
+    <div style="position:relative;text-align:center">
+      <div style="font-size:9px;letter-spacing:3px;font-weight:800;color:#d81f3a">★ TONIGHT'S SHOW ★</div>
+      <div style="font-family:Righteous;font-size:24px;line-height:1;margin-top:4px;color:#d81f3a;text-shadow:2px 2px 0 #f2b33d">CLOWN ANALYZER</div>
+      <div style="font-size:9.5px;margin-top:6px;font-weight:700">STARRING</div>
+      <div style="font-family:Righteous;font-size:16px">sirnonam3</div>
+      <div style="font-size:9px;font-weight:700;color:#8c5a68">versus kkikk1 · Italian Game</div>
+      <img src="${PZ}cool.svg" style="width:70px;margin-top:6px">
+      <div style="display:flex;justify-content:center;gap:12px;margin-top:2px">${stamp(91.9,'ACCURACY')}${stamp(0,'CLOWN MOVES',true)}${stamp(1,'BRILLIANT',true)}</div>
+      <div style="font-style:italic;font-size:10px;margin-top:9px;font-weight:600">"Zero Clown moves?! Somebody check if this is still a circus."<br><span style="font-style:normal;font-size:8.5px;color:#d81f3a;font-weight:800">— PAWNZO</span></div>
+      <div style="font-size:8px;margin-top:10px;letter-spacing:1px;color:#8c5a68">ADMIT ONE · sirnonam3.github.io/clown-analyzer</div>
+    </div>
+  </div>`],
+  ['C','Neon','Neon Night: glowing frame, big rings, Pawnzo in the corner, stickers earned.',()=>`
+  <div class="rc" style="background:radial-gradient(260px 200px at 80% 0%,#3a1150,transparent),#07080f;color:#eef0ff;padding:14px;border:2px solid #ff3b7f;box-shadow:0 0 18px #ff3b7f88,inset 0 0 18px #ff3b7f44">
+    <div style="display:flex;align-items:center;gap:7px"><img src="${LOGO}" style="width:26px;border-radius:7px">
+      <span style="font-family:Righteous;font-size:15px;color:#ff7aa8;text-shadow:0 0 8px #ff3b7f">CLOWN ANALYZER</span></div>
+    <div style="font-weight:800;font-size:15px;margin-top:12px">sirnonam3 <span style="color:#9aa0c8;font-weight:600;font-size:11px">vs kkikk1</span></div>
+    <div style="font-size:9.5px;color:#a78bfa">Italian Game · won 0-1</div>
+    <div style="display:flex;justify-content:space-around;margin-top:12px">${ring(91.9,'You',true)}${ring(63.8,'Opponent',true)}</div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-top:10px">${cnt('!!','#1aa6a6',1,1)}${cnt('★','#5fb35f',14,1)}${cnt('?','#e08a3c',1,1)}${cnt('??','#d24a4a',0,1)}</div>
+    <div style="display:flex;align-items:flex-end;gap:6px;margin-top:12px"><img src="${PZ}cool.svg" style="width:46px">
+      <div style="background:#fff;color:#1b1638;border-radius:10px;padding:6px 8px;font-size:9.5px;font-weight:600">Zero Clown moves?! Somebody check if this is still a circus.</div></div>
+    <div style="font-size:8.5px;color:#9aa0c8;margin-top:10px">STICKERS EARNED</div>
+    <div style="display:flex;gap:6px;margin-top:4px">${sticker(2,ACH[3]).replace(/62px/g,'34px')}${sticker(2,ACH[1]).replace(/62px/g,'34px')}</div>
+    <div style="position:absolute;bottom:9px;right:12px;font-size:8.5px;color:#9aa0c8">sirnonam3.github.io/clown-analyzer</div>
+  </div>`],
+];
+function ring(v,l,neon){ const C=2*Math.PI*24, col=v>=90?'#5fb35f':v>=70?'#e0c04a':'#e08a3c';
+  return `<div style="position:relative;width:64px;height:64px"><svg viewBox="0 0 60 60" style="width:100%;transform:rotate(-90deg)"><circle cx="30" cy="30" r="24" fill="none" stroke="#ffffff18" stroke-width="6"/>
+  <circle cx="30" cy="30" r="24" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-v/100)}" ${neon?`style="filter:drop-shadow(0 0 4px ${col})"`:''}/></svg>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><b style="font-size:14px;color:${col}">${v}</b><span style="font-size:7.5px;color:#9aa0c8">${l}</span></div></div>`; }
+function cnt(i,c,n,round){ return `<div style="${round?'':'background:#ffffff0d;border-radius:7px;padding:4px'}"><span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:${c};color:#fff;font-weight:800;font-size:8px;align-items:center;justify-content:center">${i}</span> <b>${n}</b></div>`; }
+function stamp(v,l,count){ return `<div style="width:58px;height:58px;border-radius:50%;border:3px double #d81f3a;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-6deg);color:#d81f3a">
+  <b style="font-family:Righteous;font-size:${count?20:15}px;line-height:1">${count?v:v+'%'}</b><span style="font-size:6.5px;font-weight:800">${l}</span></div>`; }
+function graph(fill){ return `<svg viewBox="0 0 200 50" style="width:100%;height:46px;margin-top:10px;border-radius:7px;background:#12141f"><path d="M0 50 L0 25 L20 24 L40 26 L60 22 L80 28 L100 20 L120 14 L140 30 L160 38 L180 44 L200 46 L200 50 Z" fill="${fill}" fill-opacity=".9"/></svg>`; }
+
+/* ---------- light themes ---------- */
+const LIGHTS=[
+  ['A','Circus Day','Warm cream and circus red with gold — a sunny matinee.',{mbg:'#fff8ee',mhead:'#fffaf3',mpanel:'#ffffff',mpanel2:'#fbeee0',mborder:'#ecd9c3',mtext:'#2b1a2e',mmuted:'#8c7a86',
+    mgrad:'linear-gradient(135deg,#ef3b5a,#d81f3a)',mtg:'linear-gradient(90deg,#d81f3a,#f2a33d)'},['#f2e3cc','#b9474f']],
+  ['B','Cotton Candy','Neon Night\'s pink and violet, in daylight.',{mbg:'#fbf3ff',mhead:'#fdf8ff',mpanel:'#ffffff',mpanel2:'#f3e8fb',mborder:'#e6d3f2',mtext:'#2a2140',mmuted:'#8a7ea3',
+    mgrad:'linear-gradient(135deg,#ff3b7f,#8b5cf6)',mtg:'linear-gradient(90deg,#ff3b7f,#8b5cf6)'},['#c9c3d8','#6d6199']],
+  ['C','Paper','Clean white and grey, red only for highlights.',{mbg:'#f5f6f8',mhead:'#ffffff',mpanel:'#ffffff',mpanel2:'#eef0f4',mborder:'#dfe2e8',mtext:'#1d2030',mmuted:'#6b7185',
+    mgrad:'linear-gradient(135deg,#e5484d,#c9353b)',mtg:'linear-gradient(90deg,#1d2030,#1d2030)'},['#dee3e6','#8ca2ad']],
+];
+function lightMock(i){ const [, , ,v,[l,d]]=LIGHTS[i]; const vars=Object.entries(v).map(([k,x])=>`--${k}:${x}`).join(';');
+  const sq=[l,d,l,d,d,l,d,l,l,d,l,d,d,l,d,l].map(c=>`<i style="background:${c}"></i>`).join('');
+  return `<div class="mock" style="${vars}"><div class="m-head"><img src="${LOGO}"><span class="m-title">Clown Analyzer</span><span class="m-gear"></span></div>
+    <div class="m-body"><div class="m-board">${sq}</div><div class="m-panel">
+      <div class="m-tabs"><span class="m-tab">Play</span><span class="m-tab on">Review</span><span class="m-tab">Puzzles</span></div>
+      <div class="m-verdict"><img src="${PZ}laugh.svg">One honk, on 23.Qxf7. I'll allow it.</div>
+      <div class="m-rows"><div><span>Best</span><b>14</b></div><div><span>Clown</span><b>1</b></div></div>
+      <div class="m-btn">Share report card</div></div></div></div>`; }
+const HOW=[['settings','Only when picked in Settings'],['auto','Follow the device (light by day, Neon Night in dark mode)']];
+
+/* ---------- render ---------- */
+const st={style:2,card:2,light:1,how:'settings'};
+try{ Object.assign(st,JSON.parse(localStorage.getItem('retentionOptions')||'{}')); }catch(e){}
+function draw(){
+  document.getElementById('g0').innerHTML=STYLES.map(([n,t,d],i)=>`<div class="card${st.style===i?' sel':''}" data-k="style" data-i="${i}">
+    <div class="t"><span class="num">${n}</span>${t}</div><div class="d">${d}</div>
+    <div class="sheet">${SHOW.map(k=>{ const a=ACH[k], p=a[5];
+      return `<div class="stk">${sticker(i,a)}${a[1]}${p?`<div class="prog"><i style="width:${Math.round(p[0]/p[1]*100)}%"></i></div><small>${p[0]}/${p[1]}</small>`:''}</div>`; }).join('')}</div>
+    <div class="toast"><img src="${PZ}wow.svg"><div><b>Sticker unlocked: Honk-free</b><span>A whole game without a single honk? Who ARE you?</span></div></div></div>`).join('');
+  document.getElementById('g1').innerHTML=CARDS.map(([n,t,d,f],i)=>`<div class="card${st.card===i?' sel':''}" data-k="card" data-i="${i}">
+    <div class="t"><span class="num">${n}</span>${t}</div><div class="d">${d}</div>${f()}</div>`).join('');
+  document.getElementById('g2').innerHTML=LIGHTS.map(([n,t,d],i)=>`<div class="card${st.light===i?' sel':''}" data-k="light" data-i="${i}">
+    <div class="t"><span class="num">${n}</span>${t}</div><div class="d">${d}</div>${lightMock(i)}</div>`).join('');
+  document.getElementById('g3').innerHTML='<span style="font-size:12.5px;color:var(--muted);align-self:center">How it turns on:</span>'+
+    HOW.map(([k,l])=>`<span class="chip${st.how===k?' sel':''}" data-how="${k}">${l}</span>`).join('');
+  document.getElementById('pk0').textContent='Stickers '+STYLES[st.style][0];
+  document.getElementById('pk1').textContent='Card '+CARDS[st.card][0];
+  document.getElementById('pk2').textContent='Light '+LIGHTS[st.light][0]+' · '+LIGHTS[st.light][1];
+  document.getElementById('pk3').textContent=st.how==='auto'?'Follows device':'Settings only';
+  try{ localStorage.setItem('retentionOptions',JSON.stringify(st)); }catch(e){}
+}
+document.addEventListener('click',e=>{
+  const h=e.target.closest('[data-how]'); if(h){ st.how=h.dataset.how; draw(); return; }
+  const c=e.target.closest('.card'); if(!c)return; st[c.dataset.k]=+c.dataset.i; draw();
+});
+draw();
+</script>
+</body>
+</html>
