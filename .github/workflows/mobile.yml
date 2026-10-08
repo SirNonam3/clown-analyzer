@@ -99,10 +99,23 @@ jobs:
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/App.app
-          xcrun simctl launch --console-pty "$UDID" io.github.sirnonam3.clownanalyzer > ios-console.txt 2>&1 &
-          sleep 75
+          sleep 10 # a fresh simulator can still be "Waiting on System App" right after boot
+          # the first launch sometimes never takes (empty console) — retry up to 3 times
+          for attempt in 1 2 3; do
+            echo "Launch attempt $attempt"
+            xcrun simctl terminate "$UDID" io.github.sirnonam3.clownanalyzer 2>/dev/null || true
+            xcrun simctl launch --console-pty "$UDID" io.github.sirnonam3.clownanalyzer > ios-console.txt 2>&1 &
+            LPID=$!
+            for i in $(seq 1 15); do
+              sleep 5
+              grep -qF "[analysis] best" ios-console.txt && break
+              if [ "$i" -eq 6 ] && [ ! -s ios-console.txt ]; then break; fi # nothing after 30 s: launch didn't take
+            done
+            if [ -s ios-console.txt ]; then break; fi
+            kill $LPID 2>/dev/null || true
+          done
           xcrun simctl io "$UDID" screenshot ios-screenshot.png
-          kill %1 || true
+          kill $LPID 2>/dev/null || true
           grep -E "\[status\]|\[analysis\]|\[native\]|\[ads\]|error|Error" ios-console.txt | tail -40 || true
       - name: Check the app started Stockfish 19
         run: grep -qF "Engine ready · Stockfish 19" ios-console.txt && grep -qF "[analysis] best" ios-console.txt

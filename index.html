@@ -360,9 +360,24 @@ button.btn.fav-btn.on{color:#f5c84e;border-color:#f5c84e88}
 .pp-bubble{background:#fff;color:#1b1638;font:800 15px 'Righteous','Inter',sans-serif;letter-spacing:.4px;padding:7px 12px;border-radius:14px;
   box-shadow:0 4px 14px #0008;position:relative;white-space:nowrap}
 .pp-bubble::before{content:"";position:absolute;left:-6px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:#fff}
+.pawnzo-pop.top{top:8px;bottom:auto}
+.pawnzo-pop.right{left:auto;right:8px;flex-direction:row-reverse}
+.pawnzo-pop.right .pp-bubble::before{left:auto;right:-6px;border:6px solid transparent;border-right:0;border-left-color:#fff}
 .pawnzo-pop.out{animation:pzOut .3s ease forwards}
 @keyframes pzIn{0%{transform:translateY(16px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 @keyframes pzOut{to{transform:translateY(10px) scale(.85);opacity:0}}
+/* checkmate: the mated king tips over (after the mating piece lands), red glow under it */
+/* pivots on its base, wobbles, topples left and settles lying inside its own square (edge squares clip) */
+.piece.king-fall{transform-origin:50% 85%;animation:kingFall 1s .28s cubic-bezier(.55,0,.75,.5) both}
+.piece.king-down{transform-origin:50% 85%;transform:translate(28%,-30%) rotate(-90deg)}
+@keyframes kingFall{
+  0%{transform:translate(0,0) rotate(0)} 12%{transform:translate(0,0) rotate(8deg)} 22%{transform:translate(0,0) rotate(-4deg)}
+  70%{transform:translate(28%,-30%) rotate(-97deg);animation-timing-function:ease-out}
+  82%{transform:translate(28%,-30%) rotate(-84deg)} 92%{transform:translate(28%,-30%) rotate(-92deg)}
+  100%{transform:translate(28%,-30%) rotate(-90deg)}}
+.sq.mated::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(circle,#f0475f88 0%,#f0475f33 55%,transparent 75%);animation:mateGlow 1.4s var(--md,.5s) ease both}
+@keyframes mateGlow{0%{opacity:0}100%{opacity:1}}
 /* brilliant celebration */
 .sq.brill-glow::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   box-shadow:inset 0 0 0 3px #5eead4,inset 0 0 26px #1aa6a6cc;animation:brillGlow 1.3s ease forwards}
@@ -1056,6 +1071,13 @@ function boardBadge(cell,meta){
   return b;
 }
 let pzBadge=null; // {sq, ok, fresh} ✓ / ✗ on the square of the move just tried in a puzzle
+let mateShownFen=null, mateShownAt=0; // checkmate position whose king-fall animation is playing / has played
+function onCheckmate(loser,fen){ // Pawnzo reacts once the king has fallen (puzzles have their own result card)
+  if(game.fen()!==fen||puzzleMode)return;
+  const k=boardEl.querySelector('.sq.mated'), sq=k&&k.dataset.sq; // keep the fallen king visible
+  if(loser!==mySide()){ pawnzoPop('cool',pawnzoPick('popMateWin'),sq); funSound('chime'); }
+  else pawnzoPop('sad',pawnzoPick('popMateLose'),sq); // their move — no sound
+}
 const PZ_BADGE={ok:{color:'#22a35a',icon:'✓',label:'Correct'}, bad:{color:'#e5484d',icon:'✗',label:'Not the move'}};
 function render(){
   boardEl.innerHTML='';
@@ -1106,6 +1128,20 @@ function render(){
     const cell=boardEl.querySelector(`[data-sq="${liveBadge.sq}"]`);
     if(meta && cell) boardBadge(cell,meta);
   }
+  // checkmate: the mated king tips over (animated the first time we reach the position), the winner gets a crown
+  if(game.in_checkmate()){
+    const loser=game.turn(), fen=game.fen(), fresh=mateShownFen!==fen;
+    if(fresh){ mateShownFen=fen; mateShownAt=performance.now(); }
+    const since=performance.now()-mateShownAt; // a redraw mid-fall continues the animation instead of restarting it
+    const kingSq=c=>{ const b=game.board(); for(let r=0;r<8;r++)for(let f=0;f<8;f++){ const p=b[r][f]; if(p&&p.type==='k'&&p.color===c)return FILES[f]+(8-r); } };
+    const lc=boardEl.querySelector(`[data-sq="${kingSq(loser)}"]`), wc=boardEl.querySelector(`[data-sq="${kingSq(loser==='w'?'b':'w')}"]`);
+    if(lc){ lc.classList.add('mated'); lc.style.setProperty('--md',((500-since)/1000)+'s');
+      const p=lc.querySelector('.piece');
+      if(p){ if(since<1300){ p.classList.add('king-fall'); p.style.animationDelay=((280-since)/1000)+'s'; } else p.classList.add('king-down'); }
+      boardBadge(lc,{color:'#26232f',icon:'#',label:'Checkmate'}); }
+    if(wc) boardBadge(wc,{color:'#e7b54a',icon:'crown',label:'Winner'});
+    if(fresh) setTimeout(()=>onCheckmate(loser,fen),650);
+  } else mateShownFen=null;
   // puzzle ✓ / ✗ — only while that move is still the last one on the board
   if(pzBadge && puzzleMode && last && last.to===pzBadge.sq){
     const cell=boardEl.querySelector(`[data-sq="${pzBadge.sq}"]`);
@@ -1269,6 +1305,17 @@ function triggerAnalysis(){
   if(!engineReady){return;}
   if(puzzleMode&&!puzzleMode.solved){clearArrow();return;} // no engine spoilers during a puzzle
   if(!document.getElementById('autoAnalyze').checked){clearArrow();return;}
+  if(game.game_over()){ // nothing to analyse: stop the engine, show the result instead of stale lines
+    engineQueue.length=0; if(current)engine.postMessage('stop');
+    clearArrow();
+    const mate=game.in_checkmate(), whiteWon=mate&&game.turn()==='b';
+    lastEvalPaint=mate?{pct:whiteWon?100:0,label:whiteWon?'1-0':'0-1'}:{pct:50,label:'½-½'};
+    paintEvalBar(); document.getElementById('depthText').textContent='';
+    setBest(mate?'Checkmate':game.in_stalemate()?'Stalemate':'Draw',
+      mate?(whiteWon?'White wins':'Black wins'):'The game is drawn');
+    judgePending(game.fen(), mate?(whiteWon?100000:-100000):0); // a move you just played that ended the game
+    return;
+  }
   const fen=game.fen();
   const depth=+document.getElementById('depthSel').value;
   const turn=game.turn();
@@ -1276,6 +1323,7 @@ function triggerAnalysis(){
   const sv=p=>p.mate!==undefined?(p.mate>0?100000:-100000):(p.cp||0);
   const toW=s=>turn==='b'?-s:s;
   analyze(fen,depth,(m,byPv,idx)=>{
+    if(game.fen()!==fen)return; // a late line from a position we already left
     if(idx===1){ // eval bar + best line follow the top engine line only
       showEval(m,turn);
       document.getElementById('depthText').textContent='(d'+(m.depth||'')+')';
@@ -1305,28 +1353,30 @@ function triggerAnalysis(){
       if(arrows.length)drawArrows(arrows);
     }
   },(bm,m)=>{
+    const afterEvW=toW(sv(m));
+    if(liveAnal&&liveAnal.fen===fen)liveAnal.evW=afterEvW;
+    judgePending(fen,afterEvW); // judge the move the user just tried, now that its position is fully analyzed
+    if(game.fen()!==fen)return; // we've left this position: don't paint its eval
     showEval(m,turn);
     document.getElementById('depthText').textContent='(final d'+(m.depth||'')+')';
     console.log('[analysis] best '+document.getElementById('bestText').textContent+' depth '+(m.depth||'?'));
-    const afterEvW=toW(sv(m));
-    if(liveAnal&&liveAnal.fen===fen)liveAnal.evW=afterEvW;
-    // judge the move the user just tried, now that its position is fully analyzed
-    if(pendingJudge && pendingJudge.fenAfter===fen){
-      const j=pendingJudge; pendingJudge=null;
-      const sign=j.moverWhite?1:-1;
-      const wb=winPct(sign*j.beforeEvW), wa=winPct(sign*afterEvW);
-      const gapWl=(j.secondEvW!=null)?(wb-winPct(sign*j.secondEvW)):0;
-      const cat=classify({wl:wb-wa, gapWl,
-        isBest:j.playedUci.slice(0,4)===(j.best||'').slice(0,4),
-        sac:j.sac, trivialRecap:j.trivialRecap,
-        evalAfterMover:sign*afterEvW, evalBeforeMover:sign*j.beforeEvW,
-        legalCount:j.legalCount, isBook:false,
-        matLead:j.matLead, endgame:j.endgame, oppErred:j.oppErred,
-        evalPrevMover:j.prevBeforeEvW==null?null:sign*j.prevBeforeEvW});
-      lastLiveJudge={fenAfter:j.fenAfter, cat, beforeEvW:j.beforeEvW};
-      showJudge(j.san, j.to, cat);
-    }
   });
+}
+function judgePending(fen,afterEvW){ // classify the move the user just played once its resulting position is evaluated
+  if(!(pendingJudge && pendingJudge.fenAfter===fen))return;
+  const j=pendingJudge; pendingJudge=null;
+  const sign=j.moverWhite?1:-1;
+  const wb=winPct(sign*j.beforeEvW), wa=winPct(sign*afterEvW);
+  const gapWl=(j.secondEvW!=null)?(wb-winPct(sign*j.secondEvW)):0;
+  const cat=classify({wl:wb-wa, gapWl,
+    isBest:j.playedUci.slice(0,4)===(j.best||'').slice(0,4),
+    sac:j.sac, trivialRecap:j.trivialRecap,
+    evalAfterMover:sign*afterEvW, evalBeforeMover:sign*j.beforeEvW,
+    legalCount:j.legalCount, isBook:false,
+    matLead:j.matLead, endgame:j.endgame, oppErred:j.oppErred,
+    evalPrevMover:j.prevBeforeEvW==null?null:sign*j.prevBeforeEvW});
+  lastLiveJudge={fenAfter:j.fenAfter, cat, beforeEvW:j.beforeEvW};
+  showJudge(j.san, j.to, cat);
 }
 function showJudge(san,sq,cat){
   liveBadge={sq, cat};
@@ -1334,8 +1384,8 @@ function showJudge(san,sq,cat){
   const mcat=CATS[cat];
   const jt=document.getElementById('judgeText');
   if(jt)jt.innerHTML=`Your move <b>${san}</b> ${rsBadge(mcat)} ${mcat.label}`;
-  if(cat==='brilliant'){ celebrateBrilliant(sq); pawnzoPop('wow',pawnzoPick('popBrill')); }
-  else if(cat==='blunder'){ pawnzoPop('laugh',pawnzoPick('popClown')); funSound('honk'); }
+  if(cat==='brilliant'){ celebrateBrilliant(sq); pawnzoPop('wow',pawnzoPick('popBrill'),sq); }
+  else if(cat==='blunder'){ pawnzoPop('laugh',pawnzoPick('popClown'),sq); funSound('honk'); }
 }
 function clearJudge(){
   liveBadge=null; pendingJudge=null;
@@ -2295,6 +2345,7 @@ const BADGE_GLYPH={
   '✗':'<svg viewBox="0 0 24 24"><path d="M7.2 7.2l9.6 9.6M16.8 7.2l-9.6 9.6" fill="none" stroke="#fff" stroke-width="3.3" stroke-linecap="round"/></svg>',
   '○':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.2" fill="none" stroke="#fff" stroke-width="3.1"/></svg>',
   '▦':'<svg viewBox="0 0 24 24"><path d="M4.4 6.5q3.9-1.9 7.3.5v11.4q-3.4-2.2-7.3-.5zM19.6 6.5q-3.9-1.9-7.3.5v11.4q3.4-2.2 7.3-.5z" fill="#fff"/></svg>',
+  crown:'<svg viewBox="0 0 24 24"><path d="M4.5 17.5l-1-9 5 4 3.5-6.5 3.5 6.5 5-4-1 9z" fill="#fff"/><rect x="4.6" y="18.3" width="14.8" height="2.2" rx="1" fill="#fff"/></svg>',
 };
 function badgeInner(icon){ return BADGE_GLYPH[icon]||`<b>${icon}</b>`; }
 function rsBadge(m,title){ return `<span class="rs-badge" style="--c:${m.color}"${title?` title="${m.label}"`:''}>${badgeInner(m.icon)}</span>`; }
@@ -2340,6 +2391,9 @@ const PZL={ // review verdicts
   // pop-ups on the board
   popBrill:['WOW!!','Genius?!','No way!','Brilliant!!','Show-off!','Take a bow!'],
   popClown:['HONK!','Oops!','Yikes!','Really?!','Honk honk!','Not again…','🤡'],
+  popGift:['A gift! 🎁','Their honk, not yours!','Thank you very much!','Free stuff!','Their clown, our circus!','Don\'t mind if we do.'],
+  popMateWin:['Checkmate! 🎉','Down goes the king!','And that\'s the show!','Checkmate. Take a bow!','Timber! 👑'],
+  popMateLose:['Ouch. Checkmate.','The king has fallen…','Well… that\'s the show.','HONK… that\'s mate.','Rematch?'],
   // puzzles
   pzSolved:['Solved. Show-off.','Too easy? I\'ll find a harder one.','Clean solve — the crowd claps politely.',
     'Correct! I had a honk ready for nothing.','Nice. Don\'t let it go to your head.','Got it! Are you sure you\'re a clown?','Smooth. Next!'],
@@ -2375,52 +2429,74 @@ function hashStr(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCo
 /* review verdict — about you when it's your imported game, otherwise about the whole game */
 function pawnzoVerdictData(){
   const me=currentMeSide, mine=d=>d&&(!me||d.moverWhite===(me==='w'));
-  let n=0, move=null, bmove=null, misses=0;
+  let n=0, move=null, bmove=null, moveP=null, bmoveP=null, misses=0;
   for(let i=0;i<fullHistory.length;i++){
     const d=reviewData[i]; if(!mine(d))continue;
     const san=(Math.floor(i/2)+1)+(i%2?'…':'.')+fullHistory[i];
-    if(d.cat==='blunder'){ n++; if(!move)move=san; }
+    if(d.cat==='blunder'){ n++; if(!move){move=san;moveP=i+1;} }
     else if(d.cat==='miss')misses++;
-    else if(d.cat==='brilliant'&&!bmove)bmove=san;
+    else if(d.cat==='brilliant'&&!bmove){bmove=san;bmoveP=i+1;}
   }
   const a=reviewAccuracy||{}, acc=me?a[me]:(a.w!=null&&a.b!=null?Math.min(a.w,a.b):null);
   let sc,mood;
   if(n>=4){sc='many';mood='sad';} else if(bmove&&n){sc='chaos';mood='wow';} else if(bmove){sc='brill';mood='wow';}
   else if(!n&&!misses&&acc!=null&&acc>=85){sc='clean';mood='cool';} else if(!n){sc='tidy';mood='happy';}
   else if(n===1){sc='one';mood='laugh';} else {sc='few';mood='laugh';}
-  return {sc,mood,personal:!!me,vars:{n,s:n===1?'':'s',move,bmove,acc:acc==null?'':Math.round(acc)}};
+  return {sc,mood,personal:!!me,vars:{n,s:n===1?'':'s',move,bmove,acc:acc==null?'':Math.round(acc)},plies:{move:moveP,bmove:bmoveP}};
 }
 let pawnzoVerdictIdx=null; // {key, idx} — same line every time you reopen a game; tap Pawnzo for another
-function pawnzoVerdictHtml(){
+function pawnzoVerdictLine(){ // → {html, ply}: moves in the line are links; ply = the first move it mentions
   const v=pawnzoVerdictData(), pool=PZL[v.sc].filter(l=>v.personal||!l.startsWith('@'));
   const key=gameKey()+'|'+v.sc;
   if(!pawnzoVerdictIdx||pawnzoVerdictIdx.key!==key) pawnzoVerdictIdx={key, idx:hashStr(key)%pool.length};
-  const line=pawnzoFill(pool[pawnzoVerdictIdx.idx%pool.length],v.vars);
-  return `<div class="pawnzo-verdict" id="pawnzoVerdict" title="Tap ${PAWNZO} for another line">${pawnzoFace(v.mood)}
-    <div class="pv-bubble"><div class="pv-name">${PAWNZO.toUpperCase()}</div><span id="pawnzoLine">${esc(line)}</span></div></div>`;
+  const tpl=pool[pawnzoVerdictIdx.idx%pool.length].replace(/^@/,'');
+  const first=(tpl.match(/\{(b?move)\}/)||[])[1];
+  const html=esc(tpl).replace(/\{(\w+)\}/g,(m,k)=>(k==='move'||k==='bmove')&&v.plies[k]
+    ?`<b class="pv-move" data-ply="${v.plies[k]}">${esc(v.vars[k])}</b>`:(v.vars[k]!=null?esc(String(v.vars[k])):m));
+  return {mood:v.mood, html, ply:first?v.plies[first]:null};
+}
+function pawnzoVerdictHtml(){
+  const l=pawnzoVerdictLine();
+  return `<div class="pawnzo-verdict${l.ply?' has-move':''}" id="pawnzoVerdict"${l.ply?` data-ply="${l.ply}"`:''}
+    title="Tap to see the move · tap ${PAWNZO} for another line">${pawnzoFace(l.mood)}
+    <div class="pv-bubble"><div class="pv-name">${PAWNZO.toUpperCase()}</div><span id="pawnzoLine">${l.html}</span></div></div>`;
 }
 function bindPawnzoVerdict(){
   const el=document.getElementById('pawnzoVerdict'); if(!el)return;
-  el.onclick=()=>{ pawnzoVerdictIdx.idx++; const v=pawnzoVerdictData();
-    const pool=PZL[v.sc].filter(l=>v.personal||!l.startsWith('@'));
-    document.getElementById('pawnzoLine').textContent=pawnzoFill(pool[pawnzoVerdictIdx.idx%pool.length],v.vars);
-    const f=el.querySelector('.pawnzo-face'); f.classList.remove('wiggle'); void f.offsetWidth; f.classList.add('wiggle'); };
+  // the card (or a move in it) jumps to that move; Pawnzo's face asks for another line
+  el.onclick=e=>{
+    const mv=e.target.closest('.pv-move'), p=mv?+mv.dataset.ply:+(el.dataset.ply||0);
+    if(e.target.closest('.pawnzo-face')||!p){
+      pawnzoVerdictIdx.idx++; const l=pawnzoVerdictLine();
+      document.getElementById('pawnzoLine').innerHTML=l.html;
+      if(l.ply)el.dataset.ply=l.ply; else delete el.dataset.ply; el.classList.toggle('has-move',!!l.ply);
+      const f=el.querySelector('.pawnzo-face'); f.classList.remove('wiggle'); void f.offsetWidth; f.classList.add('wiggle');
+      return;
+    }
+    gotoPly(p);
+  };
 }
 
 /* pop-up on the board corner: "HONK!" / "WOW!!" */
 let pawnzoPopT=null;
-function pawnzoPop(mood,text){
+function pawnzoPop(mood,text,sq){ // sq: the square everyone is looking at — he appears in the opposite corner
   if(!uiPrefs.pops)return;
   const box=document.querySelector('.boardbox'); if(!box)return;
   const old=document.getElementById('pawnzoPop'); if(old)old.remove();
   const el=document.createElement('div'); el.id='pawnzoPop'; el.className='pawnzo-pop';
+  const cell=sq&&boardEl.querySelector(`[data-sq="${sq}"]`);
+  if(cell){ const b=boardEl.getBoundingClientRect(), c=cell.getBoundingClientRect();
+    if(c.top+c.height/2>b.top+b.height/2)el.classList.add('top');
+    if(c.left+c.width/2<b.left+b.width*0.55)el.classList.add('right'); }
   el.innerHTML=pawnzoFace(mood)+`<div class="pp-bubble">${esc(text)}</div>`;
   box.appendChild(el);
   clearTimeout(pawnzoPopT);
   pawnzoPopT=setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),320); },1900);
 }
-/* brilliant move: badge bounce + square glow + sparkle burst + chime */
-function celebrateBrilliant(sq){
+/* "us": your side in an imported game, the solver in a puzzle, otherwise the side at the bottom of the board */
+function mySide(){ if(puzzleMode)return puzzleMode.solverWhite?'w':'b'; return currentMeSide||(flipped?'b':'w'); }
+/* brilliant move: badge bounce + square glow + sparkle burst + chime (silent for the opponent's brilliancies) */
+function celebrateBrilliant(sq,silent){
   const cell=boardEl.querySelector(`[data-sq="${sq}"]`); if(!cell)return;
   cell.classList.add('brill-glow'); setTimeout(()=>cell.classList.remove('brill-glow'),1300);
   const badge=cell.querySelector('.movebadge'); if(badge)badge.classList.add('brill-pop');
@@ -2436,7 +2512,7 @@ function celebrateBrilliant(sq){
     layer.appendChild(s);
   }
   document.body.appendChild(layer); setTimeout(()=>layer.remove(),1200);
-  funSound('chime');
+  if(!silent)funSound('chime');
 }
 /* review navigation lands on a move: brilliant → celebration, Clown move → Pawnzo laughs (after the piece lands) */
 let pawnzoReactT=null;
@@ -2447,8 +2523,10 @@ function pawnzoReactToPly(n,prevPly){
   pawnzoReactT=setTimeout(()=>{
     if(ply!==n||puzzleMode)return; // moved on already
     const last=game.history({verbose:true}).slice(-1)[0]; if(!last)return;
-    if(d.cat==='brilliant'){ celebrateBrilliant(last.to); pawnzoPop('wow',pawnzoPick('popBrill')); }
-    else { pawnzoPop('laugh',pawnzoPick('popClown')); funSound('honk'); }
+    const ours=d.moverWhite===(mySide()==='w'); // sounds and cheers only for our own moves
+    if(d.cat==='brilliant'){ celebrateBrilliant(last.to,!ours); if(ours)pawnzoPop('wow',pawnzoPick('popBrill'),last.to); }
+    else if(ours){ pawnzoPop('laugh',pawnzoPick('popClown'),last.to); funSound('honk'); }
+    else pawnzoPop('cool',pawnzoPick('popGift'),last.to); // the opponent's Clown move: gloat, quietly
   },230);
 }
 /* fun sounds (synthesized): chime for brilliant, clown-horn honk for Clown moves */
